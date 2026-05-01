@@ -175,6 +175,7 @@
       width: min(calc(100vw - 16px), calc(100svh - 240px));
       height: auto;
       aspect-ratio: 1 / 1;
+      grid-template-rows: repeat(9, 1fr);
       border: 2.5px solid var(--box-border);
       border-radius: 3px;
       overflow: hidden;
@@ -190,7 +191,7 @@
       border-right: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
       cursor: pointer;
-      font-size: clamp(16px, 4.5vw, 26px);
+      font-size: clamp(20px, 6vw, 34px);
       font-weight: 500;
       color: var(--user-text);
       transition: background-color 0.1s;
@@ -427,6 +428,50 @@
     /* ============================================================
        SHORT-SCREEN TWEAKS
        ============================================================ */
+    /* Hint dropdown */
+    .hint-wrap { position: relative; flex: 1; display: flex; }
+    .hint-wrap .ctrl-btn { width: 100%; }
+
+    .hint-menu {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      right: 0;
+      background: var(--surface);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      min-width: 155px;
+      z-index: 150;
+    }
+    .hint-menu.hidden { display: none; }
+    .hint-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 14px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--text);
+      background: none;
+      border: none;
+      width: 100%;
+      cursor: pointer;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .hint-menu-item:hover { background: var(--btn-hover); }
+    .hint-menu-item + .hint-menu-item { border-top: 1px solid var(--border); }
+
+    /* Pencil-active: shrink numpad digits as visual cue */
+    .numpad.pencil-active .num-btn { font-size: 0.88rem; }
+
+    /* Check-cell flash */
+    @keyframes flash-ok  { 0%,100%{background:var(--cell-bg)} 50%{background:rgba(16,185,129,.45)} }
+    @keyframes flash-err { 0%,100%{background:var(--cell-bg)} 50%{background:rgba(239,68,68,.45)} }
+    .cell.check-ok  { animation: flash-ok  0.55s ease; }
+    .cell.check-err { animation: flash-err 0.55s ease; }
+
     @media (max-height: 680px) {
       .num-btn  { min-height: 44px; font-size: 1.25rem; }
       .numpad   { gap: 4px; padding-bottom: 6px; }
@@ -468,9 +513,16 @@
     <button class="ctrl-btn" id="pencilBtn">
       <span class="ctrl-icon">✏️</span>Notes
     </button>
-    <button class="ctrl-btn" id="hintBtn">
-      <span class="ctrl-icon">💡</span>Hint
-    </button>
+    <div class="hint-wrap">
+      <button class="ctrl-btn" id="hintBtn">
+        <span class="ctrl-icon">💡</span>Hint
+      </button>
+      <div class="hint-menu hidden" id="hintMenu">
+        <button class="hint-menu-item" id="hintRandom">💡 Hint</button>
+        <button class="hint-menu-item" id="hintReveal">👁 Reveal Cell</button>
+        <button class="hint-menu-item" id="hintCheck">✓ Check Cell</button>
+      </div>
+    </div>
   </div>
 
   <div class="numpad" id="numpad"></div>
@@ -814,22 +866,46 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
   }
 
   /* ============================================================
-     HINT
+     HINT MENU
      ============================================================ */
-  function hint() {
+  function closeHintMenu() { document.getElementById('hintMenu').classList.add('hidden'); }
+
+  function doHint() {
+    closeHintMenu();
     if (!G.solution || G.won) return;
-    let t = G.selected;
-    if (t < 0 || G.board[t].clue || G.board[t].value !== 0) {
-      const e = G.board.reduce((a, d, i) => (!d.clue && d.value === 0 ? [...a, i] : a), []);
-      if (!e.length) return;
-      t = e[Math.floor(Math.random() * e.length)];
-    }
+    const e = G.board.reduce((a, d, i) => (!d.clue && d.value === 0 ? [...a, i] : a), []);
+    if (!e.length) return;
+    const t = e[Math.floor(Math.random() * e.length)];
     snapshot();
     G.board[t].value = +G.solution[t];
     G.board[t].clue  = true;
     G.board[t].notes.clear();
     G.selected = t;
     render(); updateNumpad(); checkWin();
+  }
+
+  function revealCell() {
+    closeHintMenu();
+    if (!G.solution || G.won) return;
+    const t = G.selected;
+    if (t < 0 || G.board[t].clue || G.board[t].value !== 0) return;
+    snapshot();
+    G.board[t].value = +G.solution[t];
+    G.board[t].clue  = true;
+    G.board[t].notes.clear();
+    render(); updateNumpad(); checkWin();
+  }
+
+  function checkCell() {
+    closeHintMenu();
+    const t = G.selected;
+    if (t < 0 || G.board[t].clue || G.board[t].value === 0 || G.won) return;
+    const ok = +G.solution[t] === G.board[t].value;
+    const el = document.querySelectorAll('.cell')[t];
+    if (el) {
+      el.classList.add(ok ? 'check-ok' : 'check-err');
+      setTimeout(() => el.classList.remove('check-ok', 'check-err'), 550);
+    }
   }
 
   /* ============================================================
@@ -955,6 +1031,7 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
   function setPencil(on) {
     G.pencil = on;
     document.getElementById('pencilBtn').classList.toggle('active', on);
+    document.getElementById('numpad').classList.toggle('pencil-active', on);
   }
 
   /* ============================================================
@@ -1002,7 +1079,7 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
     if (['0','Delete','Backspace'].includes(e.key)) { erase(); return; }
     if ((e.key==='z'||e.key==='Z') && (e.ctrlKey||e.metaKey)) { e.preventDefault(); undo(); return; }
     if (e.key==='p'||e.key==='P') { setPencil(!G.pencil); return; }
-    if (e.key==='h'||e.key==='H') { hint(); return; }
+    if (e.key==='h'||e.key==='H') { doHint(); return; }
     if (sel >= 0) {
       const c = sel%9, r = (sel/9)|0;
       let nx = sel;
@@ -1067,7 +1144,19 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
   document.getElementById('undoBtn').addEventListener('click', undo);
   document.getElementById('eraseCtrl').addEventListener('click', erase);
   document.getElementById('pencilBtn').addEventListener('click', () => setPencil(!G.pencil));
-  document.getElementById('hintBtn').addEventListener('click', hint);
+  document.getElementById('hintBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('hintMenu').classList.toggle('hidden');
+  });
+  document.getElementById('hintRandom').addEventListener('click', doHint);
+  document.getElementById('hintReveal').addEventListener('click', revealCell);
+  document.getElementById('hintCheck').addEventListener('click', checkCell);
+  document.addEventListener('pointerdown', e => {
+    const menu = document.getElementById('hintMenu');
+    if (!menu.classList.contains('hidden') &&
+        !document.getElementById('hintBtn').contains(e.target) &&
+        !menu.contains(e.target)) closeHintMenu();
+  });
 
   /* ============================================================
      INIT
