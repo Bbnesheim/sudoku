@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Sudoku">
+  <meta name="apple-mobile-web-app-title" content="Karen's Playhouse">
   <meta name="theme-color" id="themeColorMeta" content="#ffffff">
-  <title>Sudoku</title>
+  <title>Karen's Playhouse</title>
   <link rel="manifest" id="manifestLink">
 
   <style>
@@ -98,7 +98,7 @@
     }
 
     .header h1 {
-      font-size: 1.2rem;
+      font-size: 0.95rem;
       font-weight: 800;
       letter-spacing: 4px;
       color: var(--text);
@@ -207,7 +207,7 @@
     }
     .cell.pop { animation: cell-pop 0.18s ease-out; }
 
-    /* Thick 3×3 box borders */
+    /* Thick 3x3 box borders */
     .cell[data-col="2"], .cell[data-col="5"] { border-right:  2.5px solid var(--box-border); }
     .cell[data-row="2"], .cell[data-row="5"] { border-bottom: 2.5px solid var(--box-border); }
     .cell[data-col="8"] { border-right: none; }
@@ -439,7 +439,7 @@
 <body>
 
   <header class="header">
-    <h1>SUDOKU</h1>
+    <h1>KAREN'S PLAYHOUSE</h1>
     <div class="header-right">
       <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">☀️</button>
       <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
@@ -539,7 +539,7 @@
       <line x1='8' y1='64' x2='92' y2='64' stroke='%23fff' stroke-width='4'/>
     </svg>`;
     const manifest = {
-      name: 'Sudoku', short_name: 'Sudoku',
+      name: "Karen's Playhouse", short_name: 'Playhouse',
       start_url: '.', display: 'standalone', orientation: 'portrait',
       background_color: '#ffffff', theme_color: '#e94560',
       icons: [{ src: `data:image/svg+xml,${iconSvg}`, sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }]
@@ -595,14 +595,8 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
     }
 
     function generate(clueCount) {
-      // Build a complete random board via backtracking (fast, < 5ms)
       const full = Array(81).fill(0);
       fill(full, 0, true);
-
-      // Remove cells randomly — no uniqueness check needed because:
-      // • The stored solution is always valid (win detection uses conflict
-      //   checks, not solution comparison), so players can solve any way.
-      // • Uniqueness backtracking is O(seconds) on mobile — unacceptable.
       const puzzle = [...full];
       const indices = shuffle([...Array(81).keys()]);
       let clues = 81;
@@ -611,7 +605,6 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
         puzzle[idx] = 0;
         clues--;
       }
-
       return {
         puzzle: puzzle.map(v => v || '.').join(''),
         solution: full.join('')
@@ -642,7 +635,7 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
      GAME STATE
      ============================================================ */
   const G = {
-    board: [],       // 81 × { value, clue, notes:Set }
+    board: [],       // 81 x { value, clue, notes:Set }
     solution: null,
     selected: -1,
     pencil: false,
