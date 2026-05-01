@@ -468,6 +468,13 @@
     .cell.check-ok  { animation: flash-ok  0.55s ease; }
     .cell.check-err { animation: flash-err 0.55s ease; }
 
+    /* Hint highlight */
+    @keyframes hint-pulse {
+      0%,100% { box-shadow: inset 0 0 0 2px transparent; }
+      40%     { box-shadow: inset 0 0 0 3px rgba(139,92,246,0.9); background: rgba(139,92,246,0.22) !important; }
+    }
+    .cell.hint-hl { animation: hint-pulse 1s ease-in-out 2; background: rgba(139,92,246,0.12) !important; }
+
     @media (max-height: 680px) {
       .num-btn  { min-height: 44px; font-size: 1.25rem; }
       .numpad   { gap: 4px; padding-bottom: 6px; }
@@ -596,7 +603,7 @@
     document.getElementById('manifestLink').href = URL.createObjectURL(mb);
 
     if ('serviceWorker' in navigator) {
-      const sw = `const C='sudoku-v2';
+      const sw = `const C='sudoku-v3';
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.add('/')));});
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const cl=res.clone();caches.open(C).then(c=>c.put(e.request,cl));return res;})));});`;
@@ -699,6 +706,7 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
     timerSec: 0,
     timerID: null,
     won: false,
+    hintCell: -1,
     cfg: { conflicts: true, highlightSame: true, autoNotes: true }
   };
 
@@ -758,6 +766,7 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
         if (G.cfg.highlightSame && selVal > 0 && d.value === selVal) el.classList.add('hl-same');
       }
       if (i === sel) el.classList.add('selected');
+      if (i === G.hintCell) el.classList.add('hint-hl');
       if (G.cfg.conflicts && !d.clue && d.value > 0 && hasConflict(i, d.value)) el.classList.add('error');
 
       if (d.value > 0) {
@@ -869,26 +878,31 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
   function doHint() {
     closeHintMenu();
     if (!G.solution || G.won) return;
-    const e = G.board.reduce((a, d, i) => (!d.clue && d.value === 0 ? [...a, i] : a), []);
-    if (!e.length) return;
-    const t = e[Math.floor(Math.random() * e.length)];
-    snapshot();
-    G.board[t].value = +G.solution[t];
-    G.board[t].clue  = true;
-    G.board[t].notes.clear();
+    // Priority: cells where a user pencil note matches the correct answer
+    const noteMatch = G.board.reduce((a, d, i) =>
+      (!d.clue && d.value === 0 && d.notes.has(+G.solution[i]) ? [...a, i] : a), []);
+    const empty = noteMatch.length
+      ? noteMatch
+      : G.board.reduce((a, d, i) => (!d.clue && d.value === 0 ? [...a, i] : a), []);
+    if (!empty.length) return;
+    const t = empty[Math.floor(Math.random() * empty.length)];
+    G.hintCell = t;
     G.selected = t;
-    render(); updateNumpad(); checkWin();
+    render();
+    setTimeout(() => { G.hintCell = -1; render(); }, 2000);
   }
 
   function revealCell() {
     closeHintMenu();
     if (!G.solution || G.won) return;
-    const t = G.selected;
-    if (t < 0 || G.board[t].clue || G.board[t].value !== 0) return;
+    const empty = G.board.reduce((a, d, i) => (!d.clue && d.value === 0 ? [...a, i] : a), []);
+    if (!empty.length) return;
+    const t = empty[Math.floor(Math.random() * empty.length)];
     snapshot();
     G.board[t].value = +G.solution[t];
     G.board[t].clue  = true;
     G.board[t].notes.clear();
+    G.selected = t;
     render(); updateNumpad(); checkWin();
   }
 
