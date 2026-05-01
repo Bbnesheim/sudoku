@@ -463,8 +463,19 @@
     .hint-menu-item:hover { background: var(--btn-hover); }
     .hint-menu-item + .hint-menu-item { border-top: 1px solid var(--border); }
 
-    /* Pencil-active: shrink numpad digits as visual cue */
-    .numpad.pencil-active .num-btn { font-size: 0.88rem; }
+    /* Pencil-active: amber tint + dot indicator, numbers stay readable */
+    .numpad.pencil-active .num-btn {
+      background: rgba(234, 179, 8, 0.14);
+      color: var(--text);
+    }
+    .numpad.pencil-active .num-btn::after {
+      content: '';
+      position: absolute;
+      top: 5px; right: 5px;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(234, 179, 8, 0.85);
+    }
 
     /* Check-cell flash */
     @keyframes flash-ok  { 0%,100%{background:var(--cell-bg)} 50%{background:rgba(16,185,129,.45)} }
