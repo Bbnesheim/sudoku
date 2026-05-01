@@ -188,7 +188,7 @@
       transition: background-color 0.12s ease;
       user-select: none;
       -webkit-user-select: none;
-      min-height: 44px; /* touch target */
+      min-height: 44px;
       overflow: hidden;
     }
 
@@ -282,7 +282,7 @@
     }
 
     /* ============================================================
-       NUMBER PAD  — 5 columns: [1][2][3][4][5] / [6][7][8][9][⌫]
+       NUMBER PAD  — 5 columns: [1][2][3][4][5] / [6][7][8][9][x]
        ============================================================ */
     .numpad {
       width: 100%;
@@ -621,7 +621,6 @@
      PWA — manifest + service worker via blob URLs
      ============================================================ */
   (function setupPWA() {
-    // Manifest
     const icon = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
       <rect width='100' height='100' rx='14' fill='%231a1a2e'/>
       <rect x='8' y='8' width='84' height='84' rx='6' fill='none' stroke='%23e94560' stroke-width='4'/>
@@ -646,7 +645,6 @@
     const mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
     document.getElementById('manifestLink').href = URL.createObjectURL(mBlob);
 
-    // Service worker (offline shell)
     if ('serviceWorker' in navigator) {
       const sw = `
         const CACHE='sudoku-v1';
@@ -672,8 +670,6 @@
 
   /* ============================================================
      DIFFICULTY CONFIG
-     negative extraRemove = add cells back (easier)
-     positive extraRemove = remove extra cells (harder)
      ============================================================ */
   const DIFFS = [
     { name: 'Baby',    sub: '~50 clues', lib: 'easy',   extra: -14 },
@@ -688,8 +684,8 @@
      GAME STATE
      ============================================================ */
   const G = {
-    board: [],       // 81 × {value:0-9, clue:bool, notes:Set}
-    solution: null,  // 81-char string
+    board: [],
+    solution: null,
     selected: -1,
     pencil: false,
     history: [],
@@ -700,7 +696,7 @@
     cfg: { conflicts: true, highlightSame: true, autoNotes: true }
   };
 
-  let pendingDiff = 2; // difficulty chosen in new-game modal
+  let pendingDiff = 2;
 
   /* ============================================================
      PUZZLE GENERATION
@@ -712,21 +708,18 @@
     try { puzzleStr = sudoku.generate(d.lib); }
     catch (_) { puzzleStr = sudoku.generate('easy'); }
 
-    // Convert to number array (0 = empty)
     let arr = puzzleStr.split('').map(c => (c === '.' || c === '0') ? 0 : parseInt(c));
     const solStr = sudoku.solve(arr.map(v => v || '.').join(''));
-    if (!solStr) return generatePuzzle(diffIdx); // retry on bad generate
+    if (!solStr) return generatePuzzle(diffIdx);
 
     const solArr = solStr.split('').map(Number);
 
     if (d.extra < 0) {
-      // Add back |extra| clues (Baby mode)
       const empties = arr.reduce((a, v, i) => (v === 0 ? [...a, i] : a), []);
       let toAdd = Math.min(-d.extra, empties.length);
       shuffle(empties);
       for (let i = 0; i < toAdd; i++) arr[empties[i]] = solArr[empties[i]];
     } else if (d.extra > 0) {
-      // Remove extra clues while keeping unique solution
       const filled = arr.reduce((a, v, i) => (v !== 0 ? [...a, i] : a), []);
       shuffle(filled);
       let removed = 0;
@@ -735,11 +728,8 @@
         const backup = arr[idx];
         arr[idx] = 0;
         const test = arr.map(v => v || '.').join('');
-        if (sudoku.solve(test)) {
-          removed++;
-        } else {
-          arr[idx] = backup;
-        }
+        if (sudoku.solve(test)) { removed++; }
+        else { arr[idx] = backup; }
       }
     }
 
@@ -793,27 +783,19 @@
       const d = G.board[i];
       const r = Math.floor(i / 9), c = i % 9, b = box(i);
 
-      // Reset
       el.className = 'cell' + (d.clue ? ' clue' : '');
       el.innerHTML = '';
 
-      // Highlighting
       if (sel >= 0 && i !== sel) {
-        if (r === selRow || c === selCol || b === selBox) {
-          el.classList.add('hl-region');
-        }
-        if (G.cfg.highlightSame && selVal > 0 && d.value === selVal) {
-          el.classList.add('hl-same');
-        }
+        if (r === selRow || c === selCol || b === selBox) el.classList.add('hl-region');
+        if (G.cfg.highlightSame && selVal > 0 && d.value === selVal) el.classList.add('hl-same');
       }
       if (i === sel) el.classList.add('selected');
 
-      // Error (conflict)
       if (G.cfg.conflicts && !d.clue && d.value > 0 && hasConflict(i, d.value)) {
         el.classList.add('error');
       }
 
-      // Content
       if (d.value > 0) {
         el.textContent = d.value;
       } else if (d.notes.size > 0) {
@@ -859,7 +841,7 @@
   }
 
   /* ============================================================
-     INPUT — normal digit or pencil note
+     INPUT
      ============================================================ */
   function inputNum(num) {
     const sel = G.selected;
@@ -928,14 +910,14 @@
   }
 
   /* ============================================================
-     HINT — fill selected cell (or a random empty cell)
+     HINT
      ============================================================ */
   function hint() {
     if (!G.solution || G.won) return;
     let target = G.selected;
 
     if (target >= 0 && !G.board[target].clue && G.board[target].value === 0) {
-      // Fill selected
+      // use selected cell
     } else {
       const empties = G.board.reduce((a, d, i) => (!d.clue && d.value === 0 ? [...a, i] : a), []);
       if (!empties.length) return;
@@ -944,7 +926,7 @@
 
     snapshot();
     G.board[target].value = parseInt(G.solution[target]);
-    G.board[target].clue = true; // lock the hint cell
+    G.board[target].clue = true;
     G.board[target].notes.clear();
     G.selected = target;
     render();
@@ -956,10 +938,8 @@
      WIN DETECTION
      ============================================================ */
   function checkWin() {
-    const allFilled = G.board.every(d => d.value > 0);
-    if (!allFilled) return;
-    const noConflicts = G.board.every((d, i) => !hasConflict(i, d.value));
-    if (!noConflicts) return;
+    if (!G.board.every(d => d.value > 0)) return;
+    if (!G.board.every((d, i) => !hasConflict(i, d.value))) return;
 
     G.won = true;
     stopTimer();
@@ -983,10 +963,7 @@
     }, 1000);
   }
 
-  function stopTimer() {
-    clearInterval(G.timerID);
-    G.timerID = null;
-  }
+  function stopTimer() { clearInterval(G.timerID); G.timerID = null; }
 
   function fmt(s) {
     return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
@@ -998,7 +975,7 @@
   });
 
   /* ============================================================
-     NUMBER PAD — build + update remaining counts
+     NUMBER PAD
      ============================================================ */
   function buildNumpad() {
     const pad = document.getElementById('numpad');
@@ -1038,7 +1015,7 @@
   }
 
   /* ============================================================
-     PENCIL MODE TOGGLE
+     PENCIL MODE
      ============================================================ */
   function setPencil(on) {
     G.pencil = on;
@@ -1117,7 +1094,6 @@
     document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
     document.getElementById('themeColorMeta').content = isDark ? '#1a1a2e' : '#f0f0f8';
   });
-  // Set initial theme attribute
   document.documentElement.dataset.theme = 'dark';
 
   /* ============================================================
@@ -1147,16 +1123,13 @@
     buildDiffGrid();
     document.getElementById('newModal').classList.remove('hidden');
   });
-
   document.getElementById('cancelNew').addEventListener('click', () => {
     document.getElementById('newModal').classList.add('hidden');
   });
-
   document.getElementById('startNew').addEventListener('click', () => {
     document.getElementById('newModal').classList.add('hidden');
     startGame(pendingDiff);
   });
-
   document.getElementById('winNewGame').addEventListener('click', () => {
     document.getElementById('winModal').classList.add('hidden');
     pendingDiff = G.diffIdx;
@@ -1164,14 +1137,12 @@
     document.getElementById('newModal').classList.remove('hidden');
   });
 
-  /* Close overlays on backdrop click (except win modal) */
   ['newModal', 'settingsModal'].forEach(id => {
     document.getElementById(id).addEventListener('click', e => {
       if (e.target.id === id) document.getElementById(id).classList.add('hidden');
     });
   });
 
-  /* Controls bar shortcuts */
   document.getElementById('undoBtn').addEventListener('click', undo);
   document.getElementById('eraseCtrl').addEventListener('click', erase);
   document.getElementById('pencilBtn').addEventListener('click', () => setPencil(!G.pencil));
@@ -1182,7 +1153,7 @@
      ============================================================ */
   buildBoard();
   buildNumpad();
-  startGame(2); // Medium by default
+  startGame(2);
   </script>
 </body>
 </html>
