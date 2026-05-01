@@ -22,7 +22,7 @@
       --clue-bg:     #ebebf5;
       --clue-text:   #111111;
       --user-text:   #1a56db;
-      --sel-bg:      rgba(233, 69, 96, 0.18);
+      --sel-bg:      rgba(234, 179, 8, 0.28);
       --hl-region:   rgba(100, 149, 237, 0.13);
       --hl-same:     rgba(217, 119, 6, 0.20);
       --error-color: #dc2626;
@@ -43,7 +43,7 @@
       --clue-bg:     #262648;
       --clue-text:   #ffffff;
       --user-text:   #93c5fd;
-      --sel-bg:      rgba(233, 69, 96, 0.35);
+      --sel-bg:      rgba(251, 191, 36, 0.42);
       --hl-region:   rgba(100, 149, 237, 0.18);
       --hl-same:     rgba(255, 195, 40, 0.32);
       --error-color: #f87171;
@@ -230,7 +230,6 @@
     .ctrl-btn:hover { background: var(--btn-hover); }
     .ctrl-icon { font-size: 1.05rem; line-height: 1; }
     .ctrl-btn.active { background: var(--accent); color: #fff; }
-    /* Hint dropdown */
     .hint-wrap { position: relative; flex: 1; display: flex; }
     .hint-wrap .ctrl-btn { width: 100%; }
     .hint-menu {
@@ -263,9 +262,7 @@
     }
     .hint-menu-item:hover { background: var(--btn-hover); }
     .hint-menu-item + .hint-menu-item { border-top: 1px solid var(--border); }
-    /* Pencil-active: shrink numpad digits */
     .numpad.pencil-active .num-btn { font-size: 0.88rem; }
-    /* Check-cell flash */
     @keyframes flash-ok  { 0%,100%{background:var(--cell-bg)} 50%{background:rgba(16,185,129,.45)} }
     @keyframes flash-err { 0%,100%{background:var(--cell-bg)} 50%{background:rgba(239,68,68,.45)} }
     .cell.check-ok  { animation: flash-ok  0.55s ease; }
@@ -514,7 +511,7 @@
     const mb = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
     document.getElementById('manifestLink').href = URL.createObjectURL(mb);
     if ('serviceWorker' in navigator) {
-      const sw = `const C='sudoku-v3';
+      const sw = `const C='sudoku-v4';
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.add('/')));});
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const cl=res.clone();caches.open(C).then(c=>c.put(e.request,cl));return res;})));});`;
