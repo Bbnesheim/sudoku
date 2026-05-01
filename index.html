@@ -456,18 +456,10 @@
     .hint-menu-item:hover { background: var(--btn-hover); }
     .hint-menu-item + .hint-menu-item { border-top: 1px solid var(--border); }
 
-    /* Pencil-active: amber tint + dot indicator, numbers stay readable */
+    /* Pencil-active: same digit, just smaller — clear notes-mode indicator */
     .numpad.pencil-active .num-btn {
+      font-size: 0.95rem;
       background: rgba(234, 179, 8, 0.14);
-      color: var(--text);
-    }
-    .numpad.pencil-active .num-btn::after {
-      content: '';
-      position: absolute;
-      top: 5px; right: 5px;
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: rgba(234, 179, 8, 0.85);
     }
 
     /* Check-cell flash */
