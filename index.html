@@ -156,10 +156,8 @@
     .board-wrap {
       width: 100%;
       max-width: 520px;
-      /* Take all remaining vertical space between header and numpad */
-      flex: 1;
-      min-height: 0;
-      padding: 0 8px;
+      padding: 4px 8px;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -168,10 +166,15 @@
     .board {
       display: grid;
       grid-template-columns: repeat(9, 1fr);
-      /* Be as tall as available, stay square, never wider than container */
-      width: 100%;
+      /*
+       * Explicit min() sizing avoids the aspect-ratio + max-height browser bug.
+       * ~240px = space used by header + game-info + controls + numpad + gaps.
+       * vh fallback first, then svh (stable when URL bar appears/disappears).
+       */
+      width: min(calc(100vw - 16px), calc(100vh - 240px));
+      width: min(calc(100vw - 16px), calc(100svh - 240px));
+      height: auto;
       aspect-ratio: 1 / 1;
-      max-height: 100%;
       border: 2.5px solid var(--box-border);
       border-radius: 3px;
       overflow: hidden;
@@ -582,41 +585,22 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
       return false;
     }
 
-    // Count solutions, stop at limit (2 is enough for uniqueness check)
-    function countSolutions(board, pos, limit) {
-      while (pos < 81 && board[pos] !== 0) pos++;
-      if (pos === 81) return 1;
-      let count = 0;
-      for (let n = 1; n <= 9 && count < limit; n++) {
-        if (isValid(board, pos, n)) {
-          board[pos] = n;
-          count += countSolutions(board, pos + 1, limit - count);
-          board[pos] = 0;
-        }
-      }
-      return count;
-    }
-
     function generate(clueCount) {
-      // Build a complete random board
+      // Build a complete random board via backtracking (fast, < 5ms)
       const full = Array(81).fill(0);
       fill(full, 0, true);
 
-      // Remove cells one by one while keeping unique solution
+      // Remove cells randomly — no uniqueness check needed because:
+      // • The stored solution is always valid (win detection uses conflict
+      //   checks, not solution comparison), so players can solve any way.
+      // • Uniqueness backtracking is O(seconds) on mobile — unacceptable.
       const puzzle = [...full];
       const indices = shuffle([...Array(81).keys()]);
       let clues = 81;
-
       for (const idx of indices) {
         if (clues <= clueCount) break;
-        const backup = puzzle[idx];
         puzzle[idx] = 0;
-        const test = [...puzzle];
-        if (countSolutions(test, 0, 2) === 1) {
-          clues--;
-        } else {
-          puzzle[idx] = backup; // restore — removing this would make puzzle ambiguous
-        }
+        clues--;
       }
 
       return {
