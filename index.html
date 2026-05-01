@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sudoku">
+  <meta name="theme-color" id="themeColorMeta" content="#1a1a2e">
+  <title>Sudoku</title>
+  <!-- Manifest set dynamically via blob URL for PWA install support -->
+  <link rel="manifest" id="manifestLink">
+
+  <style>
+    /* ============================================================
+       CSS VARIABLES — dark mode defaults, light mode overrides
+       ============================================================ */
+    :root {
+      --bg:               #1a1a2e;
+      --surface:          #16213e;
+      --surface2:         #0f3460;
+      --text:             #e0e0e0;
+      --text-muted:       #888;
+      --border:           #2a2a4a;
+      --box-border:       #9090b0;
+      --cell-bg:          #1e1e3a;
+      --clue-bg:          #262648;
+      --clue-text:        #ffffff;
+      --user-text:        #93c5fd;
+      --sel-bg:           rgba(233, 69, 96, 0.35);
+      --hl-region:        rgba(100, 149, 237, 0.18);
+      --hl-same:          rgba(255, 195, 40, 0.32);
+      --error-color:      #f87171;
+      --accent:           #e94560;
+      --btn-bg:           #252548;
+      --btn-hover:        #353568;
+      --numpad-btn:       #252548;
+      --ctrl-text:        #aaa;
+    }
+
+    [data-theme="light"] {
+      --bg:               #f0f0f8;
+      --surface:          #ffffff;
+      --surface2:         #e4e4f0;
+      --text:             #1a1a2e;
+      --text-muted:       #666;
+      --border:           #c8c8dc;
+      --box-border:       #444466;
+      --cell-bg:          #ffffff;
+      --clue-bg:          #eeeef8;
+      --clue-text:        #1a1a2e;
+      --user-text:        #1d4ed8;
+      --sel-bg:           rgba(233, 69, 96, 0.2);
+      --hl-region:        rgba(100, 149, 237, 0.13);
+      --hl-same:          rgba(217, 119, 6, 0.18);
+      --error-color:      #dc2626;
+      --btn-bg:           #e4e4f0;
+      --btn-hover:        #d4d4e8;
+      --numpad-btn:       #e4e4f0;
+      --ctrl-text:        #555;
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      transition: background 0.25s, color 0.25s;
+    }
+
+    /* ============================================================
+       HEADER
+       ============================================================ */
+    .header {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px 4px;
+    }
+
+    .header h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 4px;
+      color: var(--text);
+    }
+
+    .header-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: var(--btn-bg);
+      border: none;
+      color: var(--text);
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .icon-btn:hover { background: var(--btn-hover); }
+
+    /* ============================================================
+       GAME INFO BAR
+       ============================================================ */
+    .game-info {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 16px 8px;
+    }
+
+    .difficulty-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .timer {
+      font-size: 1rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 1px;
+      color: var(--text);
+    }
+
+    /* ============================================================
+       SUDOKU BOARD
+       ============================================================ */
+    .board-wrap {
+      width: 100%;
+      max-width: 500px;
+      padding: 0 8px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border: 2.5px solid var(--box-border);
+      border-radius: 4px;
+      overflow: hidden;
+      transition: border-color 0.25s;
+    }
+
+    /* Individual cells */
+    .cell {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cell-bg);
+      border-right: 0.5px solid var(--border);
+      border-bottom: 0.5px solid var(--border);
+      cursor: pointer;
+      font-size: clamp(13px, 3.8vw, 22px);
+      font-weight: 500;
+      color: var(--user-text);
+      transition: background-color 0.12s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      min-height: 44px; /* touch target */
+      overflow: hidden;
+    }
+
+    /* Thick box borders every 3 cells */
+    .cell[data-col="2"], .cell[data-col="5"] {
+      border-right: 2.5px solid var(--box-border);
+    }
+    .cell[data-row="2"], .cell[data-row="5"] {
+      border-bottom: 2.5px solid var(--box-border);
+    }
+    /* Remove outer cell borders (board border handles them) */
+    .cell[data-col="8"] { border-right: none; }
+    .cell[data-row="8"] { border-bottom: none; }
+
+    /* Clue (pre-filled) cells */
+    .cell.clue {
+      background: var(--clue-bg);
+      font-weight: 700;
+      color: var(--clue-text);
+      cursor: default;
+    }
+
+    /* Highlighting states — order matters for cascade */
+    .cell.hl-region  { background: var(--hl-region); }
+    .cell.hl-same    { background: var(--hl-same); }
+    .cell.selected   { background: var(--sel-bg) !important; }
+
+    /* Error text (conflict detected) */
+    .cell.error { color: var(--error-color) !important; }
+
+    /* Pencil notes grid inside a cell */
+    .notes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      width: 100%;
+      height: 100%;
+      padding: 1px;
+      pointer-events: none;
+    }
+
+    .note-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(5px, 1.4vw, 8px);
+      font-weight: 400;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+
+    /* ============================================================
+       CONTROLS BAR
+       ============================================================ */
+    .controls {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 8px 4px;
+      gap: 4px;
+    }
+
+    .ctrl-btn {
+      background: var(--btn-bg);
+      border: none;
+      color: var(--ctrl-text);
+      padding: 8px 6px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      flex: 1;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      transition: background 0.2s, color 0.2s;
+      min-width: 0;
+    }
+
+    .ctrl-btn:hover { background: var(--btn-hover); }
+
+    .ctrl-icon { font-size: 1.15rem; line-height: 1; }
+
+    .ctrl-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* ============================================================
+       NUMBER PAD  — 5 columns: [1][2][3][4][5] / [6][7][8][9][⌫]
+       ============================================================ */
+    .numpad {
+      width: 100%;
+      max-width: 500px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      padding: 6px 8px 16px;
+    }
+
+    .num-btn {
+      background: var(--numpad-btn);
+      border: none;
+      color: var(--text);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 56px;
+      font-size: 1.45rem;
+      font-weight: 700;
+      position: relative;
+      transition: background 0.15s, transform 0.08s, opacity 0.2s;
+    }
+
+    .num-btn:active { transform: scale(0.92); }
+    .num-btn:hover  { background: var(--btn-hover); }
+
+    .num-remaining {
+      font-size: 0.55rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      position: absolute;
+      bottom: 5px;
+      letter-spacing: 0.3px;
+    }
+
+    .num-btn.depleted {
+      opacity: 0.25;
+      pointer-events: none;
+    }
+
+    .erase-btn { font-size: 1.2rem; }
+
+    /* ============================================================
+       MODALS
+       ============================================================ */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      transition: opacity 0.2s;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 28px 22px 22px;
+      width: min(92vw, 360px);
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+    }
+
+    .modal h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .modal .sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    /* Difficulty picker grid */
+    .diff-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .diff-btn {
+      background: var(--btn-bg);
+      border: 2px solid transparent;
+      color: var(--text);
+      padding: 13px 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 700;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .diff-btn:hover { border-color: var(--accent); }
+
+    .diff-btn.chosen {
+      border-color: var(--accent);
+      background: rgba(233, 69, 96, 0.14);
+    }
+
+    .diff-sub {
+      display: block;
+      font-size: 0.62rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .btn-primary:hover { opacity: 0.85; }
+
+    .btn-ghost {
+      background: var(--btn-bg);
+      color: var(--text);
+      border: none;
+      padding: 12px 22px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-ghost:hover { background: var(--btn-hover); }
+
+    /* Win modal */
+    .win-icon   { font-size: 3.2rem; margin-bottom: 6px; }
+    .win-time   { font-size: 2rem; font-weight: 800; color: var(--accent); margin: 8px 0 4px; }
+    .win-detail { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; }
+
+    @keyframes pop-in {
+      from { transform: scale(0.7); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    #winModal .modal {
+      animation: pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Settings */
+    .settings-rows { text-align: left; margin: 14px 0 20px; }
+
+    .s-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .s-row:last-child { border-bottom: none; }
+
+    .s-label { font-size: 0.9rem; }
+
+    /* Toggle switch */
+    .toggle      { position: relative; width: 44px; height: 24px; display: inline-block; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .t-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .t-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      left: 3px; top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle input:checked + .t-slider { background: var(--accent); }
+    .toggle input:checked + .t-slider::before { transform: translateX(20px); }
+
+    /* ============================================================
+       RESPONSIVE TWEAKS
+       ============================================================ */
+    @media (min-height: 750px) {
+      .board-wrap { padding: 0 12px; }
+    }
+
+    @media (max-height: 650px) {
+      .num-btn  { min-height: 48px; }
+      .numpad   { gap: 4px; padding-bottom: 8px; }
+      .controls { padding-top: 6px; padding-bottom: 2px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <h1>SUDOKU</h1>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+      <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <!-- ===== GAME INFO ===== -->
+  <div class="game-info">
+    <span class="difficulty-label" id="diffLabel">Medium</span>
+    <span class="timer" id="timer">00:00</span>
+  </div>
+
+  <!-- ===== BOARD ===== -->
+  <div class="board-wrap">
+    <div class="board" id="board" role="grid" aria-label="Sudoku grid"></div>
+  </div>
+
+  <!-- ===== CONTROLS ===== -->
+  <div class="controls">
+    <button class="ctrl-btn" id="newBtn">
+      <span class="ctrl-icon">🎮</span>New
+    </button>
+    <button class="ctrl-btn" id="undoBtn">
+      <span class="ctrl-icon">↩️</span>Undo
+    </button>
+    <button class="ctrl-btn" id="eraseCtrl">
+      <span class="ctrl-icon">⌫</span>Erase
+    </button>
+    <button class="ctrl-btn" id="pencilBtn">
+      <span class="ctrl-icon">✏️</span>Notes
+    </button>
+    <button class="ctrl-btn" id="hintBtn">
+      <span class="ctrl-icon">💡</span>Hint
+    </button>
+  </div>
+
+  <!-- ===== NUMBER PAD ===== -->
+  <div class="numpad" id="numpad"></div>
+
+  <!-- ===== NEW GAME MODAL ===== -->
+  <div class="overlay hidden" id="newModal">
+    <div class="modal">
+      <h2>New Game</h2>
+      <p class="sub">Choose difficulty</p>
+      <div class="diff-grid" id="diffGrid"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="cancelNew">Cancel</button>
+        <button class="btn-primary" id="startNew">Start</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== WIN MODAL ===== -->
+  <div class="overlay hidden" id="winModal">
+    <div class="modal">
+      <div class="win-icon">🎉</div>
+      <h2>Solved!</h2>
+      <div class="win-time" id="winTime">--:--</div>
+      <p class="win-detail" id="winDetail">Medium difficulty</p>
+      <div class="modal-actions">
+        <button class="btn-primary" id="winNewGame">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SETTINGS MODAL ===== -->
+  <div class="overlay hidden" id="settingsModal">
+    <div class="modal">
+      <h2>Settings</h2>
+      <div class="settings-rows">
+        <div class="s-row">
+          <span class="s-label">Show Conflicts</span>
+          <label class="toggle">
+            <input type="checkbox" id="cfgConflicts" checked>
+            <span class="t-slider"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <span class="s-label">Highlight Same Numbers</span>
+          <label class="toggle">
+            <input type="checkbox" id="cfgHighlightSame" checked>
+            <span class="t-slider"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <span class="s-label">Auto-Remove Notes</span>
+          <label class="toggle">
+            <input type="checkbox" id="cfgAutoNotes" checked>
+            <span class="t-slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="closeSettings">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- sudoku.js via CDN -->
+  <script src="https://unpkg.com/sudoku@0.0.2/sudoku.js"></script>
+
+  <script>
+  /* ============================================================
+     PWA — manifest + service worker via blob URLs
+     ============================================================ */
+  (function setupPWA() {
+    // Manifest
+    const icon = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+      <rect width='100' height='100' rx='14' fill='%231a1a2e'/>
+      <rect x='8' y='8' width='84' height='84' rx='6' fill='none' stroke='%23e94560' stroke-width='4'/>
+      <line x1='36' y1='8' x2='36' y2='92' stroke='%23e94560' stroke-width='4'/>
+      <line x1='64' y1='8' x2='64' y2='92' stroke='%23e94560' stroke-width='4'/>
+      <line x1='8' y1='36' x2='92' y2='36' stroke='%23e94560' stroke-width='4'/>
+      <line x1='8' y1='64' x2='92' y2='64' stroke='%23e94560' stroke-width='4'/>
+    </svg>`;
+    const iconUrl = `data:image/svg+xml,${icon}`;
+
+    const manifest = {
+      name: 'Sudoku',
+      short_name: 'Sudoku',
+      start_url: '.',
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#1a1a2e',
+      theme_color: '#1a1a2e',
+      icons: [{ src: iconUrl, sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }]
+    };
+
+    const mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    document.getElementById('manifestLink').href = URL.createObjectURL(mBlob);
+
+    // Service worker (offline shell)
+    if ('serviceWorker' in navigator) {
+      const sw = `
+        const CACHE='sudoku-v1';
+        self.addEventListener('install', e => {
+          self.skipWaiting();
+          e.waitUntil(caches.open(CACHE).then(c => c.add('/')));
+        });
+        self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+        self.addEventListener('fetch', e => {
+          e.respondWith(
+            caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+              const clone = res.clone();
+              caches.open(CACHE).then(c => c.put(e.request, clone));
+              return res;
+            }))
+          );
+        });
+      `;
+      const swBlob = new Blob([sw], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+    }
+  })();
+
+  /* ============================================================
+     DIFFICULTY CONFIG
+     negative extraRemove = add cells back (easier)
+     positive extraRemove = remove extra cells (harder)
+     ============================================================ */
+  const DIFFS = [
+    { name: 'Baby',    sub: '~50 clues', lib: 'easy',   extra: -14 },
+    { name: 'Easy',    sub: '~36 clues', lib: 'easy',   extra:   0 },
+    { name: 'Medium',  sub: '~32 clues', lib: 'medium', extra:   0 },
+    { name: 'Hard',    sub: '~27 clues', lib: 'hard',   extra:   0 },
+    { name: 'Expert',  sub: '~24 clues', lib: 'hard',   extra:   3 },
+    { name: 'Extreme', sub: '~21 clues', lib: 'hard',   extra:   6 },
+  ];
+
+  /* ============================================================
+     GAME STATE
+     ============================================================ */
+  const G = {
+    board: [],       // 81 × {value:0-9, clue:bool, notes:Set}
+    solution: null,  // 81-char string
+    selected: -1,
+    pencil: false,
+    history: [],
+    diffIdx: 2,
+    timerSec: 0,
+    timerID: null,
+    won: false,
+    cfg: { conflicts: true, highlightSame: true, autoNotes: true }
+  };
+
+  let pendingDiff = 2; // difficulty chosen in new-game modal
+
+  /* ============================================================
+     PUZZLE GENERATION
+     ============================================================ */
+  function generatePuzzle(diffIdx) {
+    const d = DIFFS[diffIdx];
+    let puzzleStr;
+
+    try { puzzleStr = sudoku.generate(d.lib); }
+    catch (_) { puzzleStr = sudoku.generate('easy'); }
+
+    // Convert to number array (0 = empty)
+    let arr = puzzleStr.split('').map(c => (c === '.' || c === '0') ? 0 : parseInt(c));
+    const solStr = sudoku.solve(arr.map(v => v || '.').join(''));
+    if (!solStr) return generatePuzzle(diffIdx); // retry on bad generate
+
+    const solArr = solStr.split('').map(Number);
+
+    if (d.extra < 0) {
+      // Add back |extra| clues (Baby mode)
+      const empties = arr.reduce((a, v, i) => (v === 0 ? [...a, i] : a), []);
+      let toAdd = Math.min(-d.extra, empties.length);
+      shuffle(empties);
+      for (let i = 0; i < toAdd; i++) arr[empties[i]] = solArr[empties[i]];
+    } else if (d.extra > 0) {
+      // Remove extra clues while keeping unique solution
+      const filled = arr.reduce((a, v, i) => (v !== 0 ? [...a, i] : a), []);
+      shuffle(filled);
+      let removed = 0;
+      for (const idx of filled) {
+        if (removed >= d.extra) break;
+        const backup = arr[idx];
+        arr[idx] = 0;
+        const test = arr.map(v => v || '.').join('');
+        if (sudoku.solve(test)) {
+          removed++;
+        } else {
+          arr[idx] = backup;
+        }
+      }
+    }
+
+    return { arr, solStr };
+  }
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* ============================================================
+     START / RESET GAME
+     ============================================================ */
+  function startGame(diffIdx) {
+    stopTimer();
+    const { arr, solStr } = generatePuzzle(diffIdx);
+
+    G.board = arr.map(v => ({ value: v, clue: v !== 0, notes: new Set() }));
+    G.solution = solStr;
+    G.diffIdx = diffIdx;
+    G.selected = -1;
+    G.pencil = false;
+    G.history = [];
+    G.timerSec = 0;
+    G.won = false;
+
+    document.getElementById('diffLabel').textContent = DIFFS[diffIdx].name;
+    document.getElementById('timer').textContent = '00:00';
+    setPencil(false);
+    render();
+    updateNumpad();
+    startTimer();
+  }
+
+  /* ============================================================
+     BOARD RENDERING
+     ============================================================ */
+  function render() {
+    const cells = document.querySelectorAll('.cell');
+    const sel = G.selected;
+    const selRow = sel < 0 ? -1 : Math.floor(sel / 9);
+    const selCol = sel < 0 ? -1 : sel % 9;
+    const selBox = sel < 0 ? -1 : box(sel);
+    const selVal = sel < 0 ? 0 : G.board[sel].value;
+
+    cells.forEach((el, i) => {
+      const d = G.board[i];
+      const r = Math.floor(i / 9), c = i % 9, b = box(i);
+
+      // Reset
+      el.className = 'cell' + (d.clue ? ' clue' : '');
+      el.innerHTML = '';
+
+      // Highlighting
+      if (sel >= 0 && i !== sel) {
+        if (r === selRow || c === selCol || b === selBox) {
+          el.classList.add('hl-region');
+        }
+        if (G.cfg.highlightSame && selVal > 0 && d.value === selVal) {
+          el.classList.add('hl-same');
+        }
+      }
+      if (i === sel) el.classList.add('selected');
+
+      // Error (conflict)
+      if (G.cfg.conflicts && !d.clue && d.value > 0 && hasConflict(i, d.value)) {
+        el.classList.add('error');
+      }
+
+      // Content
+      if (d.value > 0) {
+        el.textContent = d.value;
+      } else if (d.notes.size > 0) {
+        const grid = document.createElement('div');
+        grid.className = 'notes';
+        for (let n = 1; n <= 9; n++) {
+          const span = document.createElement('span');
+          span.className = 'note-num';
+          span.textContent = d.notes.has(n) ? n : '';
+          grid.appendChild(span);
+        }
+        el.appendChild(grid);
+      }
+    });
+  }
+
+  function box(i) {
+    const r = Math.floor(i / 9), c = i % 9;
+    return Math.floor(r / 3) * 3 + Math.floor(c / 3);
+  }
+
+  /* ============================================================
+     CONFLICT DETECTION
+     ============================================================ */
+  function hasConflict(idx, val) {
+    const r = Math.floor(idx / 9), c = idx % 9, b = box(idx);
+    for (let i = 0; i < 81; i++) {
+      if (i === idx) continue;
+      if (G.board[i].value !== val) continue;
+      const ri = Math.floor(i / 9), ci = i % 9, bi = box(i);
+      if (ri === r || ci === c || bi === b) return true;
+    }
+    return false;
+  }
+
+  /* ============================================================
+     CELL SELECTION
+     ============================================================ */
+  function selectCell(i) {
+    if (G.won) return;
+    G.selected = i;
+    render();
+  }
+
+  /* ============================================================
+     INPUT — normal digit or pencil note
+     ============================================================ */
+  function inputNum(num) {
+    const sel = G.selected;
+    if (sel < 0 || G.board[sel].clue || G.won) return;
+    const d = G.board[sel];
+
+    snapshot();
+
+    if (G.pencil && num > 0) {
+      d.value = 0;
+      d.notes.has(num) ? d.notes.delete(num) : d.notes.add(num);
+    } else {
+      if (d.value === num) return;
+      d.value = num;
+      d.notes.clear();
+      if (G.cfg.autoNotes && num > 0) removePeerNotes(sel, num);
+    }
+
+    render();
+    updateNumpad();
+    if (num > 0) checkWin();
+  }
+
+  function removePeerNotes(idx, val) {
+    const r = Math.floor(idx / 9), c = idx % 9, b = box(idx);
+    for (let i = 0; i < 81; i++) {
+      if (i === idx) continue;
+      const ri = Math.floor(i / 9), ci = i % 9, bi = box(i);
+      if (ri === r || ci === c || bi === b) G.board[i].notes.delete(val);
+    }
+  }
+
+  /* ============================================================
+     ERASE
+     ============================================================ */
+  function erase() {
+    const sel = G.selected;
+    if (sel < 0 || G.board[sel].clue || G.won) return;
+    const d = G.board[sel];
+    if (d.value === 0 && d.notes.size === 0) return;
+    snapshot();
+    d.value = 0;
+    d.notes.clear();
+    render();
+    updateNumpad();
+  }
+
+  /* ============================================================
+     UNDO
+     ============================================================ */
+  function snapshot() {
+    G.history.push({
+      board: G.board.map(d => ({ value: d.value, clue: d.clue, notes: new Set(d.notes) })),
+      sel: G.selected
+    });
+    if (G.history.length > 200) G.history.shift();
+  }
+
+  function undo() {
+    if (!G.history.length) return;
+    const prev = G.history.pop();
+    G.board = prev.board;
+    G.selected = prev.sel;
+    render();
+    updateNumpad();
+  }
+
+  /* ============================================================
+     HINT — fill selected cell (or a random empty cell)
+     ============================================================ */
+  function hint() {
+    if (!G.solution || G.won) return;
+    let target = G.selected;
+
+    if (target >= 0 && !G.board[target].clue && G.board[target].value === 0) {
+      // Fill selected
+    } else {
+      const empties = G.board.reduce((a, d, i) => (!d.clue && d.value === 0 ? [...a, i] : a), []);
+      if (!empties.length) return;
+      target = empties[Math.floor(Math.random() * empties.length)];
+    }
+
+    snapshot();
+    G.board[target].value = parseInt(G.solution[target]);
+    G.board[target].clue = true; // lock the hint cell
+    G.board[target].notes.clear();
+    G.selected = target;
+    render();
+    updateNumpad();
+    checkWin();
+  }
+
+  /* ============================================================
+     WIN DETECTION
+     ============================================================ */
+  function checkWin() {
+    const allFilled = G.board.every(d => d.value > 0);
+    if (!allFilled) return;
+    const noConflicts = G.board.every((d, i) => !hasConflict(i, d.value));
+    if (!noConflicts) return;
+
+    G.won = true;
+    stopTimer();
+
+    setTimeout(() => {
+      document.getElementById('winTime').textContent = fmt(G.timerSec);
+      document.getElementById('winDetail').textContent = DIFFS[G.diffIdx].name + ' difficulty';
+      document.getElementById('winModal').classList.remove('hidden');
+    }, 500);
+  }
+
+  /* ============================================================
+     TIMER
+     ============================================================ */
+  function startTimer() {
+    G.timerID = setInterval(() => {
+      if (!document.hidden) {
+        G.timerSec++;
+        document.getElementById('timer').textContent = fmt(G.timerSec);
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(G.timerID);
+    G.timerID = null;
+  }
+
+  function fmt(s) {
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { stopTimer(); }
+    else if (!G.won && G.timerID === null) { startTimer(); }
+  });
+
+  /* ============================================================
+     NUMBER PAD — build + update remaining counts
+     ============================================================ */
+  function buildNumpad() {
+    const pad = document.getElementById('numpad');
+    pad.innerHTML = '';
+
+    for (let n = 1; n <= 9; n++) {
+      const btn = document.createElement('button');
+      btn.className = 'num-btn';
+      btn.setAttribute('data-n', n);
+      btn.setAttribute('aria-label', `Enter ${n}`);
+      btn.innerHTML = `${n}<span class="num-remaining" data-rem="${n}"></span>`;
+      btn.addEventListener('click', () => inputNum(n));
+      pad.appendChild(btn);
+    }
+
+    const erBtn = document.createElement('button');
+    erBtn.className = 'num-btn erase-btn';
+    erBtn.textContent = '⌫';
+    erBtn.setAttribute('aria-label', 'Erase');
+    erBtn.addEventListener('click', erase);
+    pad.appendChild(erBtn);
+  }
+
+  function updateNumpad() {
+    const counts = new Array(10).fill(0);
+    G.board.forEach(d => { if (d.value > 0) counts[d.value]++; });
+
+    for (let n = 1; n <= 9; n++) {
+      const rem = 9 - counts[n];
+      const btn = document.querySelector(`.num-btn[data-n="${n}"]`);
+      const span = document.querySelector(`[data-rem="${n}"]`);
+      if (btn && span) {
+        span.textContent = rem > 0 ? rem : '';
+        btn.classList.toggle('depleted', rem === 0);
+      }
+    }
+  }
+
+  /* ============================================================
+     PENCIL MODE TOGGLE
+     ============================================================ */
+  function setPencil(on) {
+    G.pencil = on;
+    document.getElementById('pencilBtn').classList.toggle('active', on);
+  }
+
+  /* ============================================================
+     BUILD BOARD DOM
+     ============================================================ */
+  function buildBoard() {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+    for (let i = 0; i < 81; i++) {
+      const el = document.createElement('div');
+      el.className = 'cell';
+      el.setAttribute('role', 'gridcell');
+      const r = Math.floor(i / 9), c = i % 9;
+      el.dataset.row = r;
+      el.dataset.col = c;
+      el.dataset.box = Math.floor(r / 3) * 3 + Math.floor(c / 3);
+      el.addEventListener('pointerdown', () => selectCell(i));
+      board.appendChild(el);
+    }
+  }
+
+  /* ============================================================
+     DIFFICULTY MODAL
+     ============================================================ */
+  function buildDiffGrid() {
+    const grid = document.getElementById('diffGrid');
+    grid.innerHTML = '';
+    DIFFS.forEach((d, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'diff-btn' + (i === pendingDiff ? ' chosen' : '');
+      btn.innerHTML = `${d.name}<span class="diff-sub">${d.sub}</span>`;
+      btn.addEventListener('click', () => {
+        pendingDiff = i;
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('chosen'));
+        btn.classList.add('chosen');
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  /* ============================================================
+     KEYBOARD SUPPORT
+     ============================================================ */
+  document.addEventListener('keydown', e => {
+    if (G.won) return;
+    const sel = G.selected;
+
+    if (e.key >= '1' && e.key <= '9') { inputNum(parseInt(e.key)); return; }
+    if (e.key === '0' || e.key === 'Delete' || e.key === 'Backspace') { erase(); return; }
+    if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); return; }
+    if (e.key === 'p' || e.key === 'P') { setPencil(!G.pencil); return; }
+    if (e.key === 'h' || e.key === 'H') { hint(); return; }
+
+    if (sel >= 0) {
+      const c = sel % 9, r = Math.floor(sel / 9);
+      let next = sel;
+      if (e.key === 'ArrowLeft')  next = c > 0 ? sel - 1 : sel;
+      if (e.key === 'ArrowRight') next = c < 8 ? sel + 1 : sel;
+      if (e.key === 'ArrowUp')    next = r > 0 ? sel - 9 : sel;
+      if (e.key === 'ArrowDown')  next = r < 8 ? sel + 9 : sel;
+      if (next !== sel) { e.preventDefault(); selectCell(next); }
+    }
+  });
+
+  /* ============================================================
+     THEME TOGGLE
+     ============================================================ */
+  let isDark = true;
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    isDark = !isDark;
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+    document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+    document.getElementById('themeColorMeta').content = isDark ? '#1a1a2e' : '#f0f0f8';
+  });
+  // Set initial theme attribute
+  document.documentElement.dataset.theme = 'dark';
+
+  /* ============================================================
+     SETTINGS
+     ============================================================ */
+  document.getElementById('settingsBtn').addEventListener('click', () => {
+    document.getElementById('settingsModal').classList.remove('hidden');
+  });
+  document.getElementById('closeSettings').addEventListener('click', () => {
+    document.getElementById('settingsModal').classList.add('hidden');
+  });
+  document.getElementById('cfgConflicts').addEventListener('change', e => {
+    G.cfg.conflicts = e.target.checked; render();
+  });
+  document.getElementById('cfgHighlightSame').addEventListener('change', e => {
+    G.cfg.highlightSame = e.target.checked; render();
+  });
+  document.getElementById('cfgAutoNotes').addEventListener('change', e => {
+    G.cfg.autoNotes = e.target.checked;
+  });
+
+  /* ============================================================
+     NEW GAME FLOW
+     ============================================================ */
+  document.getElementById('newBtn').addEventListener('click', () => {
+    pendingDiff = G.diffIdx;
+    buildDiffGrid();
+    document.getElementById('newModal').classList.remove('hidden');
+  });
+
+  document.getElementById('cancelNew').addEventListener('click', () => {
+    document.getElementById('newModal').classList.add('hidden');
+  });
+
+  document.getElementById('startNew').addEventListener('click', () => {
+    document.getElementById('newModal').classList.add('hidden');
+    startGame(pendingDiff);
+  });
+
+  document.getElementById('winNewGame').addEventListener('click', () => {
+    document.getElementById('winModal').classList.add('hidden');
+    pendingDiff = G.diffIdx;
+    buildDiffGrid();
+    document.getElementById('newModal').classList.remove('hidden');
+  });
+
+  /* Close overlays on backdrop click (except win modal) */
+  ['newModal', 'settingsModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+      if (e.target.id === id) document.getElementById(id).classList.add('hidden');
+    });
+  });
+
+  /* Controls bar shortcuts */
+  document.getElementById('undoBtn').addEventListener('click', undo);
+  document.getElementById('eraseCtrl').addEventListener('click', erase);
+  document.getElementById('pencilBtn').addEventListener('click', () => setPencil(!G.pencil));
+  document.getElementById('hintBtn').addEventListener('click', hint);
+
+  /* ============================================================
+     INIT
+     ============================================================ */
+  buildBoard();
+  buildNumpad();
+  startGame(2); // Medium by default
+  </script>
+</body>
+</html>
