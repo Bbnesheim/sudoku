@@ -313,13 +313,6 @@
     .num-btn:active  { transform: scale(0.91); }
     .num-btn:hover   { background: var(--btn-hover); }
 
-    .num-remaining {
-      font-size: 0.52rem;
-      font-weight: 400;
-      color: var(--text-muted);
-      position: absolute;
-      bottom: 4px;
-    }
     .num-btn.depleted { opacity: 0.22; pointer-events: none; }
     .erase-btn { font-size: 1.15rem; }
 
@@ -1011,7 +1004,7 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
       const btn = document.createElement('button');
       btn.className = 'num-btn';
       btn.dataset.n = n;
-      btn.innerHTML = `${n}<span class="num-remaining" data-rem="${n}"></span>`;
+      btn.textContent = n;
       btn.addEventListener('click', () => inputNum(n));
       pad.appendChild(btn);
     }
@@ -1026,13 +1019,8 @@ self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>
     const counts = Array(10).fill(0);
     G.board.forEach(d => { if (d.value > 0) counts[d.value]++; });
     for (let n = 1; n <= 9; n++) {
-      const rem = 9 - counts[n];
-      const btn  = document.querySelector(`.num-btn[data-n="${n}"]`);
-      const span = document.querySelector(`[data-rem="${n}"]`);
-      if (btn && span) {
-        span.textContent = rem > 0 ? rem : '';
-        btn.classList.toggle('depleted', rem === 0);
-      }
+      const btn = document.querySelector(`.num-btn[data-n="${n}"]`);
+      if (btn) btn.classList.toggle('depleted', counts[n] >= 9);
     }
   }
 
