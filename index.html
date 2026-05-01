@@ -262,7 +262,19 @@
     }
     .hint-menu-item:hover { background: var(--btn-hover); }
     .hint-menu-item + .hint-menu-item { border-top: 1px solid var(--border); }
-    .numpad.pencil-active .num-btn { font-size: 0.88rem; }
+    /* Pencil-active: amber tint + dot, numbers stay full size */
+    .numpad.pencil-active .num-btn {
+      background: rgba(234, 179, 8, 0.14);
+      color: var(--text);
+    }
+    .numpad.pencil-active .num-btn::after {
+      content: '';
+      position: absolute;
+      top: 5px; right: 5px;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(234, 179, 8, 0.85);
+    }
     @keyframes flash-ok  { 0%,100%{background:var(--cell-bg)} 50%{background:rgba(16,185,129,.45)} }
     @keyframes flash-err { 0%,100%{background:var(--cell-bg)} 50%{background:rgba(239,68,68,.45)} }
     .cell.check-ok  { animation: flash-ok  0.55s ease; }
@@ -290,7 +302,7 @@
       font-size: 1.4rem;
       font-weight: 700;
       position: relative;
-      transition: background 0.12s, transform 0.08s, opacity 0.2s, font-size 0.15s;
+      transition: background 0.15s, transform 0.08s, opacity 0.2s, color 0.15s;
     }
     .num-btn:active  { transform: scale(0.91); }
     .num-btn:hover   { background: var(--btn-hover); }
@@ -511,7 +523,7 @@
     const mb = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
     document.getElementById('manifestLink').href = URL.createObjectURL(mb);
     if ('serviceWorker' in navigator) {
-      const sw = `const C='sudoku-v4';
+      const sw = `const C='sudoku-v5';
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.add('/')));});
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const cl=res.clone();caches.open(C).then(c=>c.put(e.request,cl));return res;})));});`;
