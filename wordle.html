@@ -47,7 +47,6 @@
       font-size: 0.95rem; transition: background 0.2s; text-decoration: none;
     }
     .icon-btn:hover { background: var(--btn-hover); }
-    /* Toast */
     .toast {
       position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
       background: var(--text); color: var(--bg);
@@ -56,7 +55,6 @@
       transition: opacity 0.2s;
     }
     .toast.show { opacity: 1; }
-    /* Board */
     .board-wrap {
       flex: 1; display: flex; align-items: center; justify-content: center;
       padding: 4px; width: 100%; max-width: 380px; min-height: 0;
@@ -64,12 +62,6 @@
     .board { display: flex; flex-direction: column; gap: 4px; }
     .row { display: flex; gap: 4px; }
     .tile {
-      /*
-       * Width: fit 5 tiles across the screen with margins.
-       * Height: fit 6 rows in remaining viewport after header (~54px) +
-       *         keyboard (~160px) + padding/gaps (~48px) = 262px reserved.
-       * Cap at 56px so tiles never look huge on tablets.
-       */
       --ts: min(56px, calc((100dvh - 262px) / 6), calc((100vw - 48px) / 5));
       width: var(--ts); height: var(--ts);
       border: 2px solid var(--tile-border); border-radius: 4px;
@@ -94,10 +86,8 @@
     .tile[data-state="correct"] { background: var(--correct); border-color: var(--correct); color: #fff; }
     .tile[data-state="present"] { background: var(--present); border-color: var(--present); color: #fff; }
     .tile[data-state="absent"]  { background: var(--absent);  border-color: var(--absent);  color: #fff; }
-    /* bounce animation for win */
     .tile.bounce { animation: bounce 0.6s ease forwards; }
     @keyframes bounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-18px)} 70%{transform:translateY(-8px)} }
-    /* Keyboard */
     .keyboard {
       width: 100%; max-width: 480px; padding: 4px 6px 10px; flex-shrink: 0;
       display: flex; flex-direction: column; gap: 5px;
@@ -111,14 +101,12 @@
       display: flex; align-items: center; justify-content: center;
       transition: background 0.2s, color 0.2s;
       flex: 1; max-width: 42px; user-select: none;
-      /* no min-width — flex:1 handles equal sizing without overflow */
     }
     .key.wide { max-width: 62px; font-size: 0.65rem; }
     .key:active { opacity: 0.75; }
     .key[data-state="correct"] { background: var(--correct); color: #fff; }
     .key[data-state="present"] { background: var(--present); color: #fff; }
     .key[data-state="absent"]  { background: var(--absent);  color: #fff; }
-    /* Overlay */
     .overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.6);
       display: flex; align-items: center; justify-content: center;
@@ -134,7 +122,6 @@
     .modal h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
     .modal .answer { font-size: 1.6rem; font-weight: 900; letter-spacing: 4px; color: var(--accent); margin: 10px 0 4px; }
     .modal .sub { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; }
-    /* Stats */
     .stats-row { display: flex; justify-content: center; gap: 20px; margin: 12px 0; }
     .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
     .stat-val { font-size: 1.6rem; font-weight: 800; }
@@ -172,7 +159,6 @@
 
   <div class="keyboard" id="keyboard"></div>
 
-  <!-- RESULT MODAL -->
   <div class="overlay hidden" id="resultModal">
     <div class="modal" id="resultModalInner">
       <div id="resultIcon" style="font-size:2.6rem;margin-bottom:4px"></div>
@@ -192,7 +178,6 @@
     </div>
   </div>
 
-  <!-- STATS MODAL -->
   <div class="overlay hidden" id="statsModal">
     <div class="modal">
       <h2>Statistics</h2>
@@ -211,45 +196,24 @@
 
   <script>
 
-  /* WORD LIST — loaded from tabatkins/wordle-list (cached in localStorage) */
+  /* WORD LIST — fetched from ./words.txt (cached by service worker for offline use) */
   let WORDS = [];
 
   async function loadWords() {
-    const CACHE_KEY = 'kg_wordle_wordlist';
-    const CACHE_TIME_KEY = 'kg_wordle_wordlist_ts';
-    const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-    const cached = localStorage.getItem(CACHE_KEY);
-    const cachedAt = Number(localStorage.getItem(CACHE_TIME_KEY) || 0);
-
-    if (cached && Date.now() - cachedAt < ONE_WEEK) {
-      WORDS = JSON.parse(cached);
-      return;
-    }
-
     try {
-      const [answersRes, guessesRes] = await Promise.all([
-        fetch('https://raw.githubusercontent.com/tabatkins/wordle-list/main/words'),
-        fetch('https://raw.githubusercontent.com/tabatkins/wordle-list/main/valid_guesses')
-      ]);
-      const [answersText, guessesText] = await Promise.all([answersRes.text(), guessesRes.text()]);
-      const all = [...new Set([
-        ...answersText.trim().split('\n'),
-        ...guessesText.trim().split('\n')
-      ])].filter(w => /^[a-z]{5}$/.test(w));
-      WORDS = all;
-      localStorage.setItem(CACHE_KEY, JSON.stringify(WORDS));
-      localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
+      const res = await fetch('./words.txt');
+      const text = await res.text();
+      WORDS = text.trim().split('\n').map(w => w.trim()).filter(w => /^[a-z]{5}$/.test(w));
+      return;
     } catch (e) {
-      // Offline / network error — use a built-in fallback
-      WORDS = 'about above abuse actor acute admit adopt adult after again agent agree ahead alarm album alert alike align alive alley allow alone along alter angel anger angle angry ankle apart apple apply arena argue arise armed armor array aside asset attic avoid awake award aware awful bacon badly baker basic beach beard beast began begin being below bench berry bible birth black blade blame bland blank blaze bleat bleed blend bless blind block blood bloom blown board bonus boost booth bound brain brand brave bread break breed brick bride brief bring broad brook brown build bunch burst cabin candy carry catch cause chain chair chalk chaos chase cheap check cheek chess chest chief china chunk cider civic civil claim clamp clasp clash class clean clear clerk click cliff climb cling clock clone close cloud coach color comet comic comfy coral count court cover crack craft crane crazy cream creed creek crisp cross crowd crown crude cruel curly cushy cycle daily dance daunt debut delay dense depth dirty disco dizzy dodge doubt dough draft drain drama drape drawn dream dress drift drink drive drove drown dunce dying eager eagle early earth eight elbow elder empty enjoy enter erase erect erupt evade event every exact exert exile exist extra fable facet fairy faith false fancy farce fatal fault feast fence fever fiber field fiery fifth fifty fixed flame flash flesh fleet flock flora floor focus forge fork found frail frank freak fresh front frost fruit funny fuzzy gamer gaudy given glare gleam glide globe gloom gloss glove grace grade grain grant grape grasp grave graze greed green greet grind groan groom gross group grove grown guard guava guide guild guilt guise happy hardy harsh haste haven heard heart heavy hedge helix hippo hobby holly honor horse hotel hound house hover human humor ideal image imply infer input irony issue ivory jazzy jelly jewel judge juice jumbo kitty knack knave kneel knife knock knoll known label lance large laser latch later layer learn lease lemon level light liner lithe liver logic loose lucky lunar lunge lyric magic major maker manor maple marsh match mayor media mercy merge merit metal might mirth miser model moist money month moose moral mouse muddy music naive nasty naval needy nerve night ninth noise noisy nomad north noted novel nudge nurse ocean offer olive onset opera optic orbit organ otter ought paint panda panic paper party pasta patio pearl penny perch phone photo piano piece pilot pizza place plain plane plank plate plaza pluck plumb plume plush power press pride prime print prism probe prone pulse queen query quest quiet quota quite radar radio range rapid raven reach realm rebel refer reign relax relay remix rider right risky risen rivet rocky rouge rough round royal rural rusty sadly saint salad sauce scene scone scope score scorn scout seven shame shape shark sharp shear sheer shelf shell shift shine shirt shore shout shown siege sight silly since skill skull slang slash slave sleep sleet slick slide slime sling sloop sloth slump small smash smear smile smite smoke snack snail snake snare sneak snide sniff snoop snore solid sonic south space spare spark spend spice spiky spine spire spite spoon spore sport spout spree squad staid stain stale stalk stall stamp stand start stash stave steal steam steed steep steer stern stick stiff still sting stink stock stomp stood stool stoop store storm story stout stone straw strip stuck study stump stung stunt style suave sugar suite sunny surge swamp swear sweat swept swirl swoon sword swore sweet table talon tango taper taunt taste teach tease theft theme thick thief think threw throw tiara tiger tight timer toast tonic topaz torso total touch tough towel trace track trade trail train tramp trash trawl tread treat trend triad trial tribe trick tried trill tripe troll troop trout trove truce truly trunk trust tulip tuner tunic twang tweed twirl twist ultra union unite vague valor valve vapor vault venom verge vigil viral vivid vocal vodka vogue voice wagon waltz watch weave wedge weird wheat while whine whirl widen widow witch witty woman world worry worse worst worth wrath write wrong yearn yield young youth zebra zingy'.split(' ');
+      // Offline fallback
+      WORDS = 'about above abuse actor acute admit adopt adult after again agree ahead alarm album alert align allow alone along alter angel anger angle angry ankle apart apple apply arena argue arise armed armor array aside asset attic avoid awake award aware awful bacon badly baker basin basic beach beard beast began begin being below bench berry bible birth bison black blade blame bland blank blaze bleat bleed blend bless blind block blood bloom blown board bonus boost booth bound brain brand brave bread break breed brick bride brief bring brisk broad brook broth brown build bunch burst cabin candy carry catch cause chain chair chalk chaos chase cheap check cheek chess chest chief china chunk cider civic civil claim clash class clean clear clerk click cliff climb cling clock close cloud coach color comet comic comfy coral count court cover crack craft crane crave crazy cream creed creek crisp cross crowd crown crude cruel curly cushy cycle daily dance daunt debut delay dense depth dirty disco dizzy dodge doubt dough draft drain drama drape drawn dream dress drift drink drive drove drown dunce dying eager eagle early earth eight elbow elder empty enjoy enter erase erect erupt evade event every exact exert exile exist extra fable facet fairy faith false fancy farce fatal fault feast fence fever fiber field fiery fifth fifty fixed flame flash flesh fleet flock flora floor focus forge found frail frank freak fresh front frost fruit funny fuzzy gamer gaudy given glare gleam glide globe gloom gloss glove grace grade grain grant grape grasp grave graze greed green greet grind groan groom gross group grove grown guard guava guide guild guilt guise happy hardy harsh haste haven heard heart heavy hedge helix hippo hobby holly honor horse hotel hound house hover human humor ideal image imply infer input irony issue ivory jazzy jelly jewel judge juice jumbo kitty knack knave kneel knife knock knoll known label lance large laser latch later layer learn lease leafy lemon level light liner lithe liver logic loose lucky lunar lunge lusty lyric magic major maker manor maple marsh match mayor media mercy merge merit metal might mirth miser model moist money month moose moral mouse muddy music naive nasty naval needy nerve night ninth noise noisy nomad north noted novel nudge nurse ocean offer olive onset opera optic orbit organ otter ought paint panda panic paper party pasta patio pearl penny perch phone photo piano piece pilot pizza place plain plane plank plate plaza pluck plumb plume plush power press pride prime print prism probe prone pulse queen query quest quiet quota quite radar radio range rapid raven reach realm rebel refer reign relax relay remix rider right risky risen rivet rocky rouge rough round royal rural rusty sadly saint salad sauce scene scone scope score scorn scout seven shame shape shark sharp shear sheer shelf shell shift shine shirt shore shout shown siege sight silly since skill skull slang slash slave sleep sleet slick slide slime sling sloop sloth slump small smash smear smile smite smoke snack snail snake snare sneak snide sniff snoop snore solid sonic south space spare spark spend spice spiky spine spire spite spoon spore sport spout spree squad stain stale stalk stall stamp stand start stash stave steal steam steed steep steer stern stick stiff still sting stink stock stomp stood stool stoop store storm story stout stone straw strip stuck study stump stung stunt style suave sugar suite sunny surge swamp swear sweat sweet swept swirl swoon sword table talon tango taper taunt taste teach tease theft theme thick thief think threw throw tiara tiger tight timer toast tonic topaz torso total touch tough towel trace track trade trail train tramp trash trawl tread treat trend trial tribe trick tried trill troll troop trout trove truce truly trunk trust tulip tuner tunic twang tweed twirl twist ultra union unite vague valor valve vapor vault venom verge vigil viral vivid vocal vodka vogue voice wagon waltz watch weave wedge weird wheat while whine whirl widen widow witch witty woman world worry worse worst worth wrath write wrong yearn yield young youth zebra zingy'.split(' ');
     }
   }
 
-  /* STATS */
   function loadStats(){return JSON.parse(localStorage.getItem('kg_wordle_stats')||'{"played":0,"won":0,"streak":0,"maxStreak":0,"dist":{"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"fail":0}}');}
   function saveStats(s){localStorage.setItem('kg_wordle_stats',JSON.stringify(s));}
 
-  /* GAME STATE */
   let target='', guesses=[], current='', over=false;
 
   function startGame(){
@@ -259,7 +223,6 @@
     document.getElementById('resultModal').classList.add('hidden');
   }
 
-  /* BUILD BOARD */
   function buildBoard(){
     const board=document.getElementById('board');board.innerHTML='';
     for(let r=0;r<6;r++){
@@ -284,7 +247,6 @@
     }
   }
 
-  /* BUILD KEYBOARD */
   const KB=[['q','w','e','r','t','y','u','i','o','p'],['a','s','d','f','g','h','j','k','l'],['Enter','z','x','c','v','b','n','m','⌫']];
   function buildKeyboard(){
     const kb=document.getElementById('keyboard');kb.innerHTML='';
@@ -311,7 +273,6 @@
     });
   }
 
-  /* INPUT */
   function handleKey(k){
     if(over)return;
     if(k==='⌫'||k==='Backspace'){if(current.length>0){current=current.slice(0,-1);renderCurrentRow();} return;}
@@ -326,13 +287,10 @@
     if(e.key.length===1&&/[a-zA-Z]/.test(e.key))handleKey(e.key);
   });
 
-  /* GUESS */
   function evaluateGuess(guess){
     const result=Array(5).fill('absent');
     const tgt=[...target],gss=[...guess];
-    // correct
     for(let i=0;i<5;i++){if(gss[i]===tgt[i]){result[i]='correct';tgt[i]=null;gss[i]=null;}}
-    // present
     for(let i=0;i<5;i++){if(gss[i]===null)continue;const j=tgt.indexOf(gss[i]);if(j>=0){result[i]='present';tgt[j]=null;}}
     return result;
   }
@@ -353,7 +311,6 @@
     });
   }
 
-  /* REVEAL ANIMATION */
   function revealRow(rowIdx,result,done){
     for(let c=0;c<5;c++){
       const tile=document.getElementById(`t-${rowIdx}-${c}`);
@@ -380,14 +337,12 @@
     if(row){row.classList.add('shake');setTimeout(()=>row.classList.remove('shake'),500);}
   }
 
-  /* TOAST */
   let toastTO;
   function showToast(msg){
     const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
     clearTimeout(toastTO);toastTO=setTimeout(()=>t.classList.remove('show'),1600);
   }
 
-  /* RESULT */
   function recordResult(guessCount){
     const s=loadStats();
     s.played++;
@@ -427,7 +382,6 @@
     });
   }
 
-  /* STATS MODAL */
   document.getElementById('statsBtn').addEventListener('click',()=>{
     const s=loadStats();
     fillStats(s,'ss-','ssDistChart');
@@ -437,7 +391,6 @@
   document.getElementById('statsModal').addEventListener('click',e=>{if(e.target.id==='statsModal')document.getElementById('statsModal').classList.add('hidden');});
   document.getElementById('playAgain').addEventListener('click',startGame);
 
-  /* THEME */
   let isDark=false;document.documentElement.dataset.theme='light';
   document.getElementById('themeBtn').addEventListener('click',()=>{
     isDark=!isDark;document.documentElement.dataset.theme=isDark?'dark':'light';
