@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Sudoku">
+  <meta name="theme-color" id="themeColorMeta" content="#ffffff">
+  <title>Sudoku</title>
+  <link rel="manifest" id="manifestLink">
+  <style>
+    :root {
+      --bg: #f5f5f5; --surface: #ffffff; --text: #1a1a1a; --text-muted: #777;
+      --border: #d0d0d8; --box-border: #333355; --cell-bg: #ffffff;
+      --clue-bg: #ebebf5; --clue-text: #111111; --user-text: #1a56db;
+      --sel-bg: rgba(234,179,8,0.28); --hl-region: rgba(100,149,237,0.13);
+      --hl-same: rgba(217,119,6,0.20); --error-color: #dc2626;
+      --accent: #e94560; --btn-bg: #e8e8f0; --btn-hover: #d8d8e8;
+      --numpad-btn: #e8e8f0; --ctrl-text: #555;
+    }
+    [data-theme="dark"] {
+      --bg: #1a1a2e; --surface: #16213e; --text: #e0e0e0; --text-muted: #888;
+      --border: #2a2a4a; --box-border: #9090b0; --cell-bg: #1e1e3a;
+      --clue-bg: #262648; --clue-text: #ffffff; --user-text: #93c5fd;
+      --sel-bg: rgba(251,191,36,0.42); --hl-region: rgba(100,149,237,0.18);
+      --hl-same: rgba(255,195,40,0.32); --error-color: #f87171;
+      --btn-bg: #252548; --btn-hover: #353568; --numpad-btn: #252548; --ctrl-text: #aaa;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      height: 100dvh; max-height: 100dvh;
+      display: flex; flex-direction: column; align-items: center;
+      overflow: hidden; transition: background 0.2s, color 0.2s;
+    }
+    .header {
+      width: 100%; max-width: 520px;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 16px 2px; flex-shrink: 0;
+    }
+    .header h1 { font-size: 0.95rem; font-weight: 800; letter-spacing: 4px; color: var(--text); }
+    .header-right { display: flex; gap: 6px; }
+    .icon-btn {
+      background: var(--btn-bg); border: none; color: var(--text);
+      width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem; transition: background 0.2s; flex-shrink: 0;
+      text-decoration: none;
+    }
+    .icon-btn:hover { background: var(--btn-hover); }
+    .game-info {
+      width: 100%; max-width: 520px;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 2px 16px 4px; flex-shrink: 0;
+    }
+    .difficulty-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); }
+    .timer { font-size: 0.95rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+    .board-wrap {
+      width: 100%; max-width: 520px; padding: 4px 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .board {
+      display: grid; grid-template-columns: repeat(9,1fr); grid-template-rows: repeat(9,1fr);
+      width: min(calc(100vw - 16px), calc(100vh - 240px));
+      width: min(calc(100vw - 16px), calc(100svh - 240px));
+      height: auto; aspect-ratio: 1/1;
+      border: 2.5px solid var(--box-border); border-radius: 3px; overflow: hidden;
+      transition: border-color 0.2s, filter 0.2s;
+    }
+    .cell {
+      position: relative; display: flex; align-items: center; justify-content: center;
+      background: var(--cell-bg); border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border); cursor: pointer;
+      font-size: clamp(20px,6vw,34px); font-weight: 500; color: var(--user-text);
+      transition: background-color 0.1s; user-select: none; -webkit-user-select: none; overflow: hidden;
+    }
+    @keyframes cell-pop { 0%{transform:scale(1)} 35%{transform:scale(1.28)} 70%{transform:scale(0.93)} 100%{transform:scale(1)} }
+    .cell.pop { animation: cell-pop 0.18s ease-out; }
+    .cell[data-col="2"],.cell[data-col="5"] { border-right: 2.5px solid var(--box-border); }
+    .cell[data-row="2"],.cell[data-row="5"] { border-bottom: 2.5px solid var(--box-border); }
+    .cell[data-col="8"] { border-right: none; }
+    .cell[data-row="8"] { border-bottom: none; }
+    .cell.clue { background: var(--clue-bg); font-weight: 700; color: var(--clue-text); cursor: default; }
+    .cell.hl-region { background: var(--hl-region); }
+    .cell.hl-same   { background: var(--hl-same); }
+    .cell.selected  { background: var(--sel-bg) !important; }
+    .cell.error     { color: var(--error-color) !important; }
+    .notes { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); padding: 1px; pointer-events: none; }
+    .note-num { display: flex; align-items: center; justify-content: center; font-size: clamp(7px,1.8vw,10px); font-weight: 500; color: var(--text-muted); }
+    .controls {
+      width: 100%; max-width: 520px;
+      display: flex; justify-content: space-around; padding: 4px 8px 2px; gap: 4px; flex-shrink: 0;
+    }
+    .ctrl-btn {
+      background: var(--btn-bg); border: none; color: var(--ctrl-text);
+      padding: 6px 4px; border-radius: 10px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1;
+      font-size: 0.58rem; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
+      transition: background 0.2s, color 0.2s;
+    }
+    .ctrl-btn:hover { background: var(--btn-hover); }
+    .ctrl-icon { font-size: 1.05rem; line-height: 1; }
+    .ctrl-btn.active { background: var(--accent); color: #fff; }
+    .numpad {
+      width: 100%; max-width: 520px; display: grid; grid-template-columns: repeat(5,1fr);
+      gap: 5px; padding: 4px 8px 10px; flex-shrink: 0;
+    }
+    .num-btn {
+      background: var(--numpad-btn); border: none; color: var(--text);
+      border-radius: 10px; cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; min-height: 52px;
+      font-size: 1.4rem; font-weight: 700; position: relative;
+      transition: background 0.12s, transform 0.08s, opacity 0.2s;
+    }
+    .num-btn:active  { transform: scale(0.91); }
+    .num-btn:hover   { background: var(--btn-hover); }
+    .num-btn.depleted { opacity: 0.22; pointer-events: none; }
+    .erase-btn { font-size: 1.15rem; }
+    .numpad.pencil-active .num-btn { font-size: 0.95rem; background: rgba(234,179,8,0.14); }
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    }
+    .overlay.hidden { display: none; }
+    .modal {
+      background: var(--surface); border-radius: 18px; padding: 24px 20px 20px;
+      width: min(92vw,350px); text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .modal h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
+    .modal .sub { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px; }
+    .diff-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 16px; }
+    .diff-btn {
+      background: var(--btn-bg); border: 2px solid transparent; color: var(--text);
+      padding: 11px 8px; border-radius: 10px; cursor: pointer;
+      font-size: 0.88rem; font-weight: 700; transition: all 0.15s;
+    }
+    .diff-btn:hover  { border-color: var(--accent); }
+    .diff-btn.chosen { border-color: var(--accent); background: rgba(233,69,96,0.12); }
+    .diff-sub { display: block; font-size: 0.6rem; font-weight: 400; color: var(--text-muted); margin-top: 2px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: center; }
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none; padding: 11px 26px;
+      border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.84; }
+    .btn-ghost {
+      background: var(--btn-bg); color: var(--text); border: none; padding: 11px 20px;
+      border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+    }
+    .btn-ghost:hover { background: var(--btn-hover); }
+    .win-icon   { font-size: 3rem; margin-bottom: 4px; }
+    .win-time   { font-size: 1.9rem; font-weight: 800; color: var(--accent); margin: 6px 0 2px; }
+    .win-detail { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px; }
+    .win-record { font-size: 0.85rem; margin-bottom: 14px; }
+    .win-record.new-pb { color: #f59e0b; font-weight: 700; }
+    @keyframes pop-in { from{transform:scale(0.72);opacity:0} to{transform:scale(1);opacity:1} }
+    #winModal .modal { animation: pop-in 0.32s cubic-bezier(0.34,1.56,0.64,1); }
+    .settings-rows { text-align: left; margin: 12px 0 18px; }
+    .s-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .s-row:last-child { border-bottom: none; }
+    .s-label { font-size: 0.88rem; }
+    .toggle { position: relative; width: 44px; height: 24px; display: inline-block; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .t-slider { position: absolute; inset: 0; background: var(--border); border-radius: 12px; cursor: pointer; transition: background 0.2s; }
+    .t-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+    .toggle input:checked + .t-slider { background: var(--accent); }
+    .toggle input:checked + .t-slider::before { transform: translateX(20px); }
+    /* Hint dropdown */
+    .hint-wrap { position: relative; flex: 1; display: flex; }
+    .hint-wrap .ctrl-btn { width: 100%; }
+    .hint-menu {
+      position: absolute; bottom: calc(100% + 6px); right: 0;
+      background: var(--surface); border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28); border: 1px solid var(--border);
+      overflow: hidden; min-width: 155px; z-index: 150;
+    }
+    .hint-menu.hidden { display: none; }
+    .hint-menu-item {
+      display: flex; align-items: center; gap: 8px; padding: 11px 14px;
+      font-size: 0.84rem; font-weight: 600; color: var(--text);
+      background: none; border: none; width: 100%; cursor: pointer; text-align: left; white-space: nowrap;
+    }
+    .hint-menu-item:hover { background: var(--btn-hover); }
+    .hint-menu-item + .hint-menu-item { border-top: 1px solid var(--border); }
+    /* Flash animations */
+    @keyframes flash-ok  { 0%,100%{background:var(--cell-bg)} 50%{background:rgba(16,185,129,.45)} }
+    @keyframes flash-err { 0%,100%{background:var(--cell-bg)} 50%{background:rgba(239,68,68,.45)} }
+    .cell.check-ok  { animation: flash-ok  0.55s ease; }
+    .cell.check-err { animation: flash-err 0.55s ease; }
+    @keyframes hint-pulse {
+      0%,100% { box-shadow: inset 0 0 0 2px transparent; }
+      40%     { box-shadow: inset 0 0 0 3px rgba(139,92,246,0.9); background: rgba(139,92,246,0.22) !important; }
+    }
+    .cell.hint-hl { animation: hint-pulse 1s ease-in-out 2; background: rgba(139,92,246,0.12) !important; }
+    /* Pause */
+    body.paused .board    { filter: blur(12px); }
+    body.paused .controls { filter: blur(12px); pointer-events: none; }
+    body.paused .numpad   { filter: blur(12px); pointer-events: none; }
+    .pause-veil {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 10px; z-index: 98; cursor: pointer;
+    }
+    body.paused .pause-veil { display: flex; }
+    .pause-veil-label { color: #fff; font-size: 1.8rem; font-weight: 800; letter-spacing: 6px; }
+    .pause-veil-hint  { color: rgba(255,255,255,0.65); font-size: 0.8rem; letter-spacing: 1px; }
+    @media (max-height: 680px) {
+      .num-btn { min-height: 44px; font-size: 1.25rem; }
+      .numpad  { gap: 4px; padding-bottom: 6px; }
+      .controls { padding-top: 2px; }
+      .header  { padding-top: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="icon-btn" aria-label="Home">🏡</a>
+    <h1>SUDOKU</h1>
+    <div class="header-right">
+      <button class="icon-btn" id="pauseBtn" aria-label="Pause">⏸️</button>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">☀️</button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <div class="game-info">
+    <span class="difficulty-label" id="diffLabel">—</span>
+    <span class="timer" id="timer">00:00</span>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board" id="board" role="grid" aria-label="Sudoku grid"></div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="newBtn"><span class="ctrl-icon">🎮</span>New</button>
+    <button class="ctrl-btn" id="undoBtn"><span class="ctrl-icon">↩️</span>Undo</button>
+    <button class="ctrl-btn" id="eraseCtrl"><span class="ctrl-icon">⌫</span>Erase</button>
+    <button class="ctrl-btn" id="pencilBtn"><span class="ctrl-icon">✏️</span>Notes</button>
+    <div class="hint-wrap">
+      <button class="ctrl-btn" id="hintBtn"><span class="ctrl-icon">💡</span>Hint</button>
+      <div class="hint-menu hidden" id="hintMenu">
+        <button class="hint-menu-item" id="hintRandom">💡 Hint</button>
+        <button class="hint-menu-item" id="hintReveal">👁 Reveal Cell</button>
+        <button class="hint-menu-item" id="hintCheck">✓ Check Cell</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="numpad" id="numpad"></div>
+
+  <div class="pause-veil" id="pauseVeil">
+    <div class="pause-veil-label">PAUSED</div>
+    <div class="pause-veil-hint">TAP TO RESUME</div>
+  </div>
+
+  <!-- NEW GAME MODAL -->
+  <div class="overlay hidden" id="newModal">
+    <div class="modal">
+      <h2>New Game</h2>
+      <p class="sub">Choose difficulty</p>
+      <div class="diff-grid" id="diffGrid"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="cancelNew">Cancel</button>
+        <button class="btn-primary" id="startNew">Start</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WIN MODAL -->
+  <div class="overlay hidden" id="winModal">
+    <div class="modal">
+      <div class="win-icon">🎉</div>
+      <h2>Solved!</h2>
+      <div class="win-time" id="winTime">--:--</div>
+      <p class="win-detail" id="winDetail">Medium difficulty</p>
+      <p class="win-record" id="winRecord"></p>
+      <div class="modal-actions">
+        <button class="btn-primary" id="winNewGame">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="overlay hidden" id="settingsModal">
+    <div class="modal">
+      <h2>Settings</h2>
+      <div class="settings-rows">
+        <div class="s-row"><span class="s-label">Show Conflicts</span><label class="toggle"><input type="checkbox" id="cfgConflicts" checked><span class="t-slider"></span></label></div>
+        <div class="s-row"><span class="s-label">Highlight Same Numbers</span><label class="toggle"><input type="checkbox" id="cfgHighlightSame" checked><span class="t-slider"></span></label></div>
+        <div class="s-row"><span class="s-label">Auto-Remove Notes</span><label class="toggle"><input type="checkbox" id="cfgAutoNotes" checked><span class="t-slider"></span></label></div>
+      </div>
+      <div class="modal-actions"><button class="btn-primary" id="closeSettings">Done</button></div>
+    </div>
+  </div>
+
+  <script>
+  /* PWA */
+  (function(){
+    const icon=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='14' fill='%23e94560'/><rect x='8' y='8' width='84' height='84' rx='6' fill='%23fff' opacity='.15'/><line x1='36' y1='8' x2='36' y2='92' stroke='%23fff' stroke-width='4'/><line x1='64' y1='8' x2='64' y2='92' stroke='%23fff' stroke-width='4'/><line x1='8' y1='36' x2='92' y2='36' stroke='%23fff' stroke-width='4'/><line x1='8' y1='64' x2='92' y2='64' stroke='%23fff' stroke-width='4'/></svg>`;
+    const m={name:'Sudoku',short_name:'Sudoku',start_url:'./sudoku.html',display:'standalone',orientation:'portrait',background_color:'#ffffff',theme_color:'#e94560',icons:[{src:`data:image/svg+xml,${icon}`,sizes:'any',type:'image/svg+xml',purpose:'any maskable'}]};
+    document.getElementById('manifestLink').href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/manifest+json'}));
+    if('serviceWorker' in navigator){
+      const sw=`const C='sudoku-v4';self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.add('./sudoku.html')));});self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const cl=res.clone();caches.open(C).then(c=>c.put(e.request,cl));return res;})));});`;
+      navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+    }
+  })();
+
+  /* ENGINE */
+  const SudokuEngine=(() => {
+    function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+    function isValid(b,pos,n){const row=(pos/9)|0,col=pos%9,br=(row/3|0)*3,bc=(col/3|0)*3;for(let i=0;i<9;i++){if(b[row*9+i]===n||b[i*9+col]===n||b[(br+(i/3|0))*9+bc+i%3]===n)return false;}return true;}
+    function fill(b,pos,rand){
+      while(pos<81&&b[pos]!==0)pos++;
+      if(pos===81)return true;
+      const nums=rand?shuffle([1,2,3,4,5,6,7,8,9]):[1,2,3,4,5,6,7,8,9];
+      for(const n of nums){if(isValid(b,pos,n)){b[pos]=n;if(fill(b,pos+1,rand))return true;b[pos]=0;}}
+      return false;
+    }
+    function countSolutions(board){
+      let count=0;
+      const b=board.slice();
+      function bt(pos){
+        while(pos<81&&b[pos]!==0)pos++;
+        if(pos===81){count++;return count>=2;}
+        for(let n=1;n<=9;n++){if(isValid(b,pos,n)){b[pos]=n;if(bt(pos+1)){b[pos]=0;return true;}b[pos]=0;}}
+        return false;
+      }
+      bt(0);return count;
+    }
+    function generate(clueCount){
+      const full=Array(81).fill(0);
+      fill(full,0,true);
+      const puzzle=[...full];
+      const indices=shuffle([...Array(81).keys()]);
+      let removed=0;
+      const target=81-clueCount;
+      for(const idx of indices){
+        if(removed>=target)break;
+        const saved=puzzle[idx];
+        puzzle[idx]=0;
+        if(countSolutions(puzzle)>1){puzzle[idx]=saved;}
+        else removed++;
+      }
+      return{puzzle:puzzle.map(v=>v||'.').join(''),solution:full.join('')};
+    }
+    return{generate};
+  })();
+
+  /* DIFFICULTY */
+  const DIFFS=[
+    {name:'Baby',    sub:'~55 clues', clues:55},
+    {name:'Easy',    sub:'~46 clues', clues:46},
+    {name:'Medium',  sub:'~38 clues', clues:38},
+    {name:'Hard',    sub:'~32 clues', clues:32},
+    {name:'Expert',  sub:'~28 clues', clues:28},
+    {name:'Extreme', sub:'~24 clues', clues:24},
+  ];
+
+  /* PERSONAL BESTS */
+  function getBest(name){return(JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}')||{})[name]??null;}
+  function setBest(name,secs){
+    const d=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');
+    if(d[name]==null||secs<d[name]){d[name]=secs;localStorage.setItem('kg_sudoku_best',JSON.stringify(d));return true;}
+    return false;
+  }
+
+  /* STATE */
+  const G={board:[],solution:null,selected:-1,pencil:false,history:[],diffIdx:2,timerSec:0,timerID:null,won:false,hintCell:-1,cfg:{conflicts:true,highlightSame:true,autoNotes:true}};
+  let pendingDiff=2,G_paused=false;
+
+  /* PAUSE */
+  function togglePause(){
+    if(G.won||!G.solution)return;
+    G_paused=!G_paused;
+    document.body.classList.toggle('paused',G_paused);
+    document.getElementById('pauseBtn').textContent=G_paused?'▶️':'⏸️';
+    if(G_paused)stopTimer(); else startTimer();
+  }
+
+  /* PUZZLE GENERATION */
+  function generatePuzzle(diffIdx){
+    const{puzzle,solution}=SudokuEngine.generate(DIFFS[diffIdx].clues);
+    return{arr:puzzle.split('').map(c=>c==='.'?0:+c),solution};
+  }
+
+  /* START GAME */
+  function startGame(diffIdx){
+    G_paused=false; document.body.classList.remove('paused');
+    document.getElementById('pauseBtn').textContent='⏸️';
+    stopTimer();
+    const{arr,solution}=generatePuzzle(diffIdx);
+    G.board=arr.map(v=>({value:v,clue:v!==0,notes:new Set()}));
+    G.solution=solution; G.diffIdx=diffIdx; G.selected=-1; G.pencil=false;
+    G.history=[]; G.timerSec=0; G.won=false; G.hintCell=-1;
+    document.getElementById('diffLabel').textContent=DIFFS[diffIdx].name;
+    document.getElementById('timer').textContent='00:00';
+    setPencil(false); render(); updateNumpad(); startTimer();
+  }
+
+  /* RENDER */
+  function render(){
+    const cells=document.querySelectorAll('.cell');
+    const sel=G.selected;
+    const selRow=sel<0?-1:(sel/9)|0,selCol=sel<0?-1:sel%9,selBox=sel<0?-1:box(sel);
+    const selVal=sel<0?0:G.board[sel].value;
+    cells.forEach((el,i)=>{
+      const d=G.board[i],r=(i/9)|0,c=i%9;
+      el.className='cell'+(d.clue?' clue':'');
+      el.innerHTML='';
+      if(sel>=0&&i!==sel){
+        if(r===selRow||c===selCol||box(i)===selBox)el.classList.add('hl-region');
+        if(G.cfg.highlightSame&&selVal>0&&d.value===selVal)el.classList.add('hl-same');
+      }
+      if(i===sel)el.classList.add('selected');
+      if(i===G.hintCell)el.classList.add('hint-hl');
+      if(G.cfg.conflicts&&!d.clue&&d.value>0&&hasConflict(i,d.value))el.classList.add('error');
+      if(d.value>0){el.textContent=d.value;}
+      else if(d.notes.size>0){
+        const g=document.createElement('div');g.className='notes';
+        for(let n=1;n<=9;n++){const s=document.createElement('span');s.className='note-num';s.textContent=d.notes.has(n)?n:'';g.appendChild(s);}
+        el.appendChild(g);
+      }
+    });
+  }
+  function box(i){const r=(i/9)|0,c=i%9;return(r/3|0)*3+(c/3|0);}
+  function hasConflict(idx,val){
+    const r=(idx/9)|0,c=idx%9,b=box(idx);
+    for(let i=0;i<81;i++){if(i===idx||G.board[i].value!==val)continue;if((i/9|0)===r||i%9===c||box(i)===b)return true;}
+    return false;
+  }
+
+  /* INPUT */
+  function selectCell(i){if(G.won||G_paused)return;G.selected=i;render();}
+  function inputNum(num){
+    const sel=G.selected;
+    if(sel<0||G.board[sel].clue||G.won||G_paused)return;
+    const d=G.board[sel]; snapshot();
+    if(G.pencil&&num>0){d.value=0;d.notes.has(num)?d.notes.delete(num):d.notes.add(num);}
+    else{
+      if(d.value===num)return;
+      d.value=num; d.notes.clear();
+      if(G.cfg.autoNotes&&num>0){
+        const r=(sel/9)|0,c=sel%9;
+        for(let i=0;i<81;i++){if(i===sel)continue;if((i/9|0)===r||i%9===c||box(i)===box(sel))G.board[i].notes.delete(num);}
+      }
+    }
+    render(); updateNumpad();
+    if(num>0){const el=document.querySelectorAll('.cell')[sel];if(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}}
+    if(num>0)checkWin();
+  }
+  function erase(){
+    const sel=G.selected;
+    if(sel<0||G.board[sel].clue||G.won||G_paused)return;
+    const d=G.board[sel];if(d.value===0&&d.notes.size===0)return;
+    snapshot(); d.value=0; d.notes.clear(); render(); updateNumpad();
+  }
+
+  /* UNDO */
+  function snapshot(){G.history.push({board:G.board.map(d=>({value:d.value,clue:d.clue,notes:new Set(d.notes)})),sel:G.selected});if(G.history.length>200)G.history.shift();}
+  function undo(){if(!G.history.length)return;const p=G.history.pop();G.board=p.board;G.selected=p.sel;render();updateNumpad();}
+
+  /* HINT MENU */
+  function closeHintMenu(){document.getElementById('hintMenu').classList.add('hidden');}
+  function doHint(){
+    closeHintMenu();if(!G.solution||G.won)return;
+    const noteMatch=G.board.reduce((a,d,i)=>(!d.clue&&d.value===0&&d.notes.has(+G.solution[i])?[...a,i]:a),[]);
+    const empty=noteMatch.length?noteMatch:G.board.reduce((a,d,i)=>(!d.clue&&d.value===0?[...a,i]:a),[]);
+    if(!empty.length)return;
+    const t=empty[Math.floor(Math.random()*empty.length)];
+    G.hintCell=t; G.selected=t; render();
+    setTimeout(()=>{G.hintCell=-1;render();},2000);
+  }
+  function revealCell(){
+    closeHintMenu();if(!G.solution||G.won)return;
+    const empty=G.board.reduce((a,d,i)=>(!d.clue&&d.value===0?[...a,i]:a),[]);
+    if(!empty.length)return;
+    const t=empty[Math.floor(Math.random()*empty.length)];
+    snapshot();G.board[t].value=+G.solution[t];G.board[t].clue=true;G.board[t].notes.clear();
+    G.selected=t;render();updateNumpad();checkWin();
+  }
+  function checkCell(){
+    closeHintMenu();const t=G.selected;
+    if(t<0||G.board[t].clue||G.board[t].value===0||G.won)return;
+    const ok=+G.solution[t]===G.board[t].value;
+    const el=document.querySelectorAll('.cell')[t];
+    if(el){el.classList.add(ok?'check-ok':'check-err');setTimeout(()=>el.classList.remove('check-ok','check-err'),550);}
+  }
+
+  /* WIN */
+  function checkWin(){
+    if(!G.board.every(d=>d.value>0))return;
+    if(!G.board.every((d,i)=>!hasConflict(i,d.value)))return;
+    G.won=true;stopTimer();launchConfetti();
+    const diffName=DIFFS[G.diffIdx].name;
+    const isNew=setBest(diffName,G.timerSec);
+    const best=getBest(diffName);
+    setTimeout(()=>{
+      document.getElementById('winTime').textContent=fmt(G.timerSec);
+      document.getElementById('winDetail').textContent=diffName+' difficulty';
+      const rec=document.getElementById('winRecord');
+      if(isNew){rec.textContent='🏆 New Personal Best!';rec.className='win-record new-pb';}
+      else{rec.textContent='Best: '+fmt(best);rec.className='win-record';}
+      document.getElementById('winModal').classList.remove('hidden');
+    },800);
+  }
+
+  /* CONFETTI */
+  function launchConfetti(){
+    const canvas=document.createElement('canvas');
+    canvas.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:500';
+    document.body.appendChild(canvas);const ctx=canvas.getContext('2d');
+    canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+    const COLS=['#e94560','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
+    const pieces=Array.from({length:160},()=>({x:Math.random()*canvas.width,y:-20-Math.random()*canvas.height*0.5,vx:(Math.random()-0.5)*5,vy:Math.random()*3+2,w:Math.random()*10+5,h:Math.random()*5+3,rot:Math.random()*360,rs:(Math.random()-0.5)*8,col:COLS[Math.floor(Math.random()*COLS.length)]}));
+    let frame=0;
+    (function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);const alpha=Math.max(0,1-frame/140);pieces.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.rot+=p.rs;ctx.save();ctx.globalAlpha=alpha;ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.fillStyle=p.col;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();});frame++;if(frame<160)requestAnimationFrame(draw);else canvas.remove();})();
+  }
+
+  /* TIMER */
+  function startTimer(){G.timerID=setInterval(()=>{if(!document.hidden&&!G_paused){G.timerSec++;document.getElementById('timer').textContent=fmt(G.timerSec);}},1000);}
+  function stopTimer(){clearInterval(G.timerID);G.timerID=null;}
+  function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopTimer();else if(!G.won&&!G.timerID&&!G_paused)startTimer();});
+
+  /* NUMPAD */
+  function buildNumpad(){
+    const pad=document.getElementById('numpad');
+    for(let n=1;n<=9;n++){const btn=document.createElement('button');btn.className='num-btn';btn.dataset.n=n;btn.textContent=n;btn.addEventListener('click',()=>inputNum(n));pad.appendChild(btn);}
+    const er=document.createElement('button');er.className='num-btn erase-btn';er.textContent='⌫';er.addEventListener('click',erase);pad.appendChild(er);
+  }
+  function updateNumpad(){
+    const counts=Array(10).fill(0);G.board.forEach(d=>{if(d.value>0)counts[d.value]++;});
+    for(let n=1;n<=9;n++){const btn=document.querySelector(`.num-btn[data-n="${n}"]`);if(btn)btn.classList.toggle('depleted',counts[n]>=9);}
+  }
+  function setPencil(on){G.pencil=on;document.getElementById('pencilBtn').classList.toggle('active',on);document.getElementById('numpad').classList.toggle('pencil-active',on);}
+
+  /* BUILD BOARD */
+  function buildBoard(){
+    const board=document.getElementById('board');
+    for(let i=0;i<81;i++){
+      const el=document.createElement('div');el.className='cell';el.setAttribute('role','gridcell');
+      const r=(i/9)|0,c=i%9;el.dataset.row=r;el.dataset.col=c;
+      el.addEventListener('pointerdown',()=>selectCell(i));board.appendChild(el);
+    }
+  }
+
+  /* DIFF GRID */
+  function buildDiffGrid(){
+    const grid=document.getElementById('diffGrid');grid.innerHTML='';
+    DIFFS.forEach((d,i)=>{
+      const btn=document.createElement('button');
+      btn.className='diff-btn'+(i===pendingDiff?' chosen':'');
+      const best=getBest(d.name);
+      btn.innerHTML=`${d.name}<span class="diff-sub">${best!=null?'⏱ '+fmt(best):d.sub}</span>`;
+      btn.addEventListener('click',()=>{pendingDiff=i;document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('chosen'));btn.classList.add('chosen');});
+      grid.appendChild(btn);
+    });
+  }
+
+  /* KEYBOARD */
+  document.addEventListener('keydown',e=>{
+    if(G_paused){if(e.key==='Escape'||e.key===' ')togglePause();return;}
+    if(G.won)return;
+    const sel=G.selected;
+    if(e.key>='1'&&e.key<='9'){inputNum(+e.key);return;}
+    if(['0','Delete','Backspace'].includes(e.key)){erase();return;}
+    if((e.key==='z'||e.key==='Z')&&(e.ctrlKey||e.metaKey)){e.preventDefault();undo();return;}
+    if(e.key==='p'||e.key==='P'){setPencil(!G.pencil);return;}
+    if(e.key==='h'||e.key==='H'){doHint();return;}
+    if(e.key==='Escape'){togglePause();return;}
+    if(sel>=0){
+      const c=sel%9,r=(sel/9)|0;let nx=sel;
+      if(e.key==='ArrowLeft')nx=c>0?sel-1:sel;
+      if(e.key==='ArrowRight')nx=c<8?sel+1:sel;
+      if(e.key==='ArrowUp')nx=r>0?sel-9:sel;
+      if(e.key==='ArrowDown')nx=r<8?sel+9:sel;
+      if(nx!==sel){e.preventDefault();selectCell(nx);}
+    }
+  });
+
+  /* THEME */
+  let isDark=false;document.documentElement.dataset.theme='light';
+  document.getElementById('themeBtn').addEventListener('click',()=>{
+    isDark=!isDark;document.documentElement.dataset.theme=isDark?'dark':'light';
+    document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+    document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
+  });
+
+  /* SETTINGS */
+  document.getElementById('settingsBtn').addEventListener('click',()=>document.getElementById('settingsModal').classList.remove('hidden'));
+  document.getElementById('closeSettings').addEventListener('click',()=>document.getElementById('settingsModal').classList.add('hidden'));
+  document.getElementById('cfgConflicts').addEventListener('change',e=>{G.cfg.conflicts=e.target.checked;render();});
+  document.getElementById('cfgHighlightSame').addEventListener('change',e=>{G.cfg.highlightSame=e.target.checked;render();});
+  document.getElementById('cfgAutoNotes').addEventListener('change',e=>{G.cfg.autoNotes=e.target.checked;});
+
+  /* NEW GAME FLOW */
+  document.getElementById('newBtn').addEventListener('click',()=>{
+    if(G_paused)togglePause();
+    pendingDiff=G.diffIdx;buildDiffGrid();
+    document.getElementById('cancelNew').style.display='';
+    document.getElementById('newModal').classList.remove('hidden');
+  });
+  document.getElementById('cancelNew').addEventListener('click',()=>{
+    if(!G.solution)return;
+    document.getElementById('newModal').classList.add('hidden');
+  });
+  document.getElementById('startNew').addEventListener('click',()=>{
+    document.getElementById('newModal').classList.add('hidden');
+    startGame(pendingDiff);
+  });
+  document.getElementById('winNewGame').addEventListener('click',()=>{
+    document.getElementById('winModal').classList.add('hidden');
+    pendingDiff=G.diffIdx;buildDiffGrid();
+    document.getElementById('cancelNew').style.display='';
+    document.getElementById('newModal').classList.remove('hidden');
+  });
+  ['newModal','settingsModal'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{
+    if(e.target.id===id&&(id!=='newModal'||G.solution))document.getElementById(id).classList.add('hidden');
+  }));
+  document.getElementById('undoBtn').addEventListener('click',undo);
+  document.getElementById('eraseCtrl').addEventListener('click',erase);
+  document.getElementById('pencilBtn').addEventListener('click',()=>setPencil(!G.pencil));
+  document.getElementById('pauseBtn').addEventListener('click',togglePause);
+  document.getElementById('pauseVeil').addEventListener('click',togglePause);
+  document.getElementById('hintBtn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('hintMenu').classList.toggle('hidden');});
+  document.getElementById('hintRandom').addEventListener('click',doHint);
+  document.getElementById('hintReveal').addEventListener('click',revealCell);
+  document.getElementById('hintCheck').addEventListener('click',checkCell);
+  document.addEventListener('pointerdown',e=>{
+    const menu=document.getElementById('hintMenu');
+    if(!menu.classList.contains('hidden')&&!document.getElementById('hintBtn').contains(e.target)&&!menu.contains(e.target))closeHintMenu();
+  });
+
+  /* INIT */
+  buildBoard();buildNumpad();
+  pendingDiff=2;buildDiffGrid();
+  document.getElementById('cancelNew').style.display='none';
+  document.getElementById('newModal').classList.remove('hidden');
+  </script>
+</body>
+</html>
