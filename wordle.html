@@ -59,16 +59,22 @@
     /* Board */
     .board-wrap {
       flex: 1; display: flex; align-items: center; justify-content: center;
-      padding: 8px; width: 100%; max-width: 380px;
+      padding: 4px; width: 100%; max-width: 380px; min-height: 0;
     }
-    .board { display: flex; flex-direction: column; gap: 5px; }
-    .row { display: flex; gap: 5px; }
+    .board { display: flex; flex-direction: column; gap: 4px; }
+    .row { display: flex; gap: 4px; }
     .tile {
-      width: min(58px, calc((100vw - 60px) / 5));
-      height: min(58px, calc((100vw - 60px) / 5));
+      /*
+       * Width: fit 5 tiles across the screen with margins.
+       * Height: fit 6 rows in remaining viewport after header (~54px) +
+       *         keyboard (~160px) + padding/gaps (~48px) = 262px reserved.
+       * Cap at 56px so tiles never look huge on tablets.
+       */
+      --ts: min(56px, calc((100dvh - 262px) / 6), calc((100vw - 48px) / 5));
+      width: var(--ts); height: var(--ts);
       border: 2px solid var(--tile-border); border-radius: 4px;
       display: flex; align-items: center; justify-content: center;
-      font-size: clamp(20px, 6vw, 30px); font-weight: 800; text-transform: uppercase;
+      font-size: clamp(16px, 5.5vw, 28px); font-weight: 800; text-transform: uppercase;
       background: var(--tile-empty); color: var(--text);
       transition: transform 0.1s;
       position: relative; overflow: hidden;
@@ -93,20 +99,21 @@
     @keyframes bounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-18px)} 70%{transform:translateY(-8px)} }
     /* Keyboard */
     .keyboard {
-      width: 100%; max-width: 480px; padding: 6px 8px 12px; flex-shrink: 0;
-      display: flex; flex-direction: column; gap: 6px;
+      width: 100%; max-width: 480px; padding: 4px 6px 10px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 5px;
     }
-    .kb-row { display: flex; justify-content: center; gap: 5px; }
+    .kb-row { display: flex; justify-content: center; gap: 4px; }
     .key {
       background: var(--key-bg); color: var(--key-text);
       border: none; border-radius: 6px; cursor: pointer;
-      height: 54px; min-width: 36px; padding: 0 6px;
-      font-size: 0.88rem; font-weight: 700; text-transform: uppercase;
+      height: 46px; padding: 0 2px;
+      font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
       display: flex; align-items: center; justify-content: center;
       transition: background 0.2s, color 0.2s;
-      flex: 1; max-width: 46px; user-select: none;
+      flex: 1; max-width: 42px; user-select: none;
+      /* no min-width — flex:1 handles equal sizing without overflow */
     }
-    .key.wide { max-width: 66px; font-size: 0.72rem; }
+    .key.wide { max-width: 62px; font-size: 0.65rem; }
     .key:active { opacity: 0.75; }
     .key[data-state="correct"] { background: var(--correct); color: #fff; }
     .key[data-state="present"] { background: var(--present); color: #fff; }
@@ -140,11 +147,10 @@
     .modal-actions { display: flex; gap: 10px; justify-content: center; }
     .btn-primary { background: var(--accent); color: #fff; border: none; padding: 11px 26px; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
     .btn-primary:hover { opacity: 0.84; }
-    @media (max-height: 680px) {
-      .tile { width: min(48px, calc((100vw - 60px)/5)); height: min(48px, calc((100vw - 60px)/5)); }
-      .key  { height: 44px; }
-      .board-wrap { padding: 4px; }
-      .keyboard { padding: 4px 8px 8px; gap: 4px; }
+    @media (max-height: 620px) {
+      .key  { height: 38px; font-size: 0.72rem; }
+      .keyboard { padding: 2px 6px 6px; gap: 3px; }
+      .kb-row { gap: 3px; }
     }
   </style>
 </head>
