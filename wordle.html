@@ -7,7 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Wordle">
   <meta name="theme-color" id="themeColorMeta" content="#ffffff">
-  <title>Wordle</title>
+  <title>Wordle | Karen's Garden</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
   <style>
     :root {
       --bg: #f5f5f5; --surface: #ffffff; --text: #1a1a1a; --text-muted: #777;
@@ -19,7 +20,7 @@
     [data-theme="dark"] {
       --bg: #1a1a2e; --surface: #16213e; --text: #e0e0e0; --text-muted: #888;
       --border: #2a2a4a; --btn-bg: #252548; --btn-hover: #353568;
-      --tile-empty: #1e1e3a; --tile-border: #3a3a5a; --tile-active: #4a4a7a;
+      --tile-empty: #252548; --tile-border: #5a5a8a; --tile-active: #4a4a7a;
       --correct: #538d4e; --present: #b59f3b; --absent: #3a3a3a;
       --key-bg: #818384; --key-text: #ffffff;
     }
@@ -39,6 +40,8 @@
       border-bottom: 1px solid var(--border);
     }
     header h1 { font-size: 1rem; font-weight: 900; letter-spacing: 4px; }
+    .header-center { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+    .game-mode { font-size: 0.58rem; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
     .header-right { display: flex; gap: 6px; }
     .icon-btn {
       background: var(--btn-bg); border: none; color: var(--text);
@@ -61,6 +64,7 @@
       flex: 1; display: flex; align-items: center; justify-content: center;
       padding: 4px; width: 100%; max-width: 380px; min-height: 0;
     }
+    .loading-wrap { display: flex; align-items: center; justify-content: center; flex: 1; gap: 8px; color: var(--text-muted); font-size: 0.85rem; }
     .board { display: flex; flex-direction: column; gap: 4px; }
     .row { display: flex; gap: 4px; }
     .tile {
@@ -147,6 +151,14 @@
     .modal-actions { display: flex; gap: 10px; justify-content: center; }
     .btn-primary { background: var(--accent); color: #fff; border: none; padding: 11px 26px; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
     .btn-primary:hover { opacity: 0.84; }
+    /* Help tiles */
+    .help-example { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+    .htile { width: 34px; height: 34px; border: 2px solid var(--tile-border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; text-transform: uppercase; flex-shrink: 0; background: var(--tile-empty); }
+    .htile[data-state="correct"] { background: var(--correct); border-color: var(--correct); color: #fff; }
+    .htile[data-state="present"] { background: var(--present); border-color: var(--present); color: #fff; }
+    .htile[data-state="absent"]  { background: var(--absent);  border-color: var(--absent);  color: #fff; }
+    /* No-data message */
+    .no-data-msg { font-size: 0.82rem; color: var(--text-muted); margin: 16px 0; line-height: 1.5; }
     @media (max-height: 620px) {
       .key  { height: 38px; font-size: 0.72rem; }
       .keyboard { padding: 2px 6px 6px; gap: 3px; }
@@ -157,8 +169,13 @@
 <body>
   <header>
     <a href="index.html" class="icon-btn" aria-label="Home">🏡</a>
-    <h1>WORDLE</h1>
+    <div class="header-center">
+      <h1>WORDLE</h1>
+      <span class="game-mode">Unlimited</span>
+    </div>
     <div class="header-right">
+      <button class="icon-btn" id="newGameBtn" aria-label="New Game" title="New Game">↺</button>
+      <button class="icon-btn" id="helpBtn" aria-label="How to Play">❓</button>
       <button class="icon-btn" id="statsBtn" aria-label="Stats">📊</button>
       <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">☀️</button>
     </div>
@@ -167,7 +184,8 @@
   <div class="toast" id="toast"></div>
 
   <div class="board-wrap">
-    <div class="board" id="board"></div>
+    <div class="loading-wrap" id="loadingMsg">⏳ Loading words…</div>
+    <div class="board" id="board" style="display:none"></div>
   </div>
 
   <div class="keyboard" id="keyboard"></div>
@@ -202,9 +220,40 @@
         <div class="stat"><div class="stat-val" id="ss-streak">0</div><div class="stat-label">Streak</div></div>
         <div class="stat"><div class="stat-val" id="ss-max">0</div><div class="stat-label">Max Streak</div></div>
       </div>
+      <div id="ssNoData" class="no-data-msg" style="display:none">No games played yet — play your first game to see stats!</div>
       <div class="dist" id="ssDistChart"></div>
       <div class="modal-actions">
         <button class="btn-primary" id="closeStats">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW TO PLAY MODAL -->
+  <div class="overlay hidden" id="helpModal">
+    <div class="modal">
+      <h2>How to Play</h2>
+      <p class="sub">Guess the word in 6 tries</p>
+      <div style="text-align:left;font-size:0.82rem;line-height:1.6;margin-bottom:14px">
+        <p>• Each guess must be a valid 5-letter word.</p>
+        <p>• Hit <b>Enter</b> to submit your guess.</p>
+        <p>• Tile colors show how close your guess was:</p>
+      </div>
+      <div style="text-align:left">
+        <div class="help-example">
+          <div class="htile" data-state="correct">W</div><div class="htile">E</div><div class="htile">A</div><div class="htile">R</div><div class="htile">Y</div>
+          <span style="font-size:0.78rem;padding-left:4px"><b>W</b> is in the correct spot</span>
+        </div>
+        <div class="help-example">
+          <div class="htile">P</div><div class="htile" data-state="present">I</div><div class="htile">L</div><div class="htile">L</div><div class="htile">S</div>
+          <span style="font-size:0.78rem;padding-left:4px"><b>I</b> is in the word, wrong spot</span>
+        </div>
+        <div class="help-example">
+          <div class="htile">V</div><div class="htile">A</div><div class="htile">G</div><div class="htile" data-state="absent">U</div><div class="htile">E</div>
+          <span style="font-size:0.78rem;padding-left:4px"><b>U</b> is not in the word</span>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top:18px">
+        <button class="btn-primary" id="closeHelp">Got it!</button>
       </div>
     </div>
   </div>
@@ -219,11 +268,11 @@
       const res = await fetch('./words.txt');
       const text = await res.text();
       WORDS = text.trim().split('\n').map(w => w.trim()).filter(w => /^[a-z]{5}$/.test(w));
-      return;
     } catch (e) {
-      // Offline fallback
-      WORDS = 'about above abuse actor acute admit adopt adult after again agree ahead alarm album alert align allow alone along alter angel anger angle angry ankle apart apple apply arena argue arise armed armor array aside asset attic avoid awake award aware awful bacon badly baker basin basic beach beard beast began begin being below bench berry bible birth bison black blade blame bland blank blaze bleat bleed blend bless blind block blood bloom blown board bonus boost booth bound brain brand brave bread break breed brick bride brief bring brisk broad brook broth brown build bunch burst cabin candy carry catch cause chain chair chalk chaos chase cheap check cheek chess chest chief china chunk cider civic civil claim clash class clean clear clerk click cliff climb cling clock close cloud coach color comet comic comfy coral count court cover crack craft crane crave crazy cream creed creek crisp cross crowd crown crude cruel curly cushy cycle daily dance daunt debut delay dense depth dirty disco dizzy dodge doubt dough draft drain drama drape drawn dream dress drift drink drive drove drown dunce dying eager eagle early earth eight elbow elder empty enjoy enter erase erect erupt evade event every exact exert exile exist extra fable facet fairy faith false fancy farce fatal fault feast fence fever fiber field fiery fifth fifty fixed flame flash flesh fleet flock flora floor focus forge found frail frank freak fresh front frost fruit funny fuzzy gamer gaudy given glare gleam glide globe gloom gloss glove grace grade grain grant grape grasp grave graze greed green greet grind groan groom gross group grove grown guard guava guide guild guilt guise happy hardy harsh haste haven heard heart heavy hedge helix hippo hobby holly honor horse hotel hound house hover human humor ideal image imply infer input irony issue ivory jazzy jelly jewel judge juice jumbo kitty knack knave kneel knife knock knoll known label lance large laser latch later layer learn lease leafy lemon level light liner lithe liver logic loose lucky lunar lunge lusty lyric magic major maker manor maple marsh match mayor media mercy merge merit metal might mirth miser model moist money month moose moral mouse muddy music naive nasty naval needy nerve night ninth noise noisy nomad north noted novel nudge nurse ocean offer olive onset opera optic orbit organ otter ought paint panda panic paper party pasta patio pearl penny perch phone photo piano piece pilot pizza place plain plane plank plate plaza pluck plumb plume plush power press pride prime print prism probe prone pulse queen query quest quiet quota quite radar radio range rapid raven reach realm rebel refer reign relax relay remix rider right risky risen rivet rocky rouge rough round royal rural rusty sadly saint salad sauce scene scone scope score scorn scout seven shame shape shark sharp shear sheer shelf shell shift shine shirt shore shout shown siege sight silly since skill skull slang slash slave sleep sleet slick slide slime sling sloop sloth slump small smash smear smile smite smoke snack snail snake snare sneak snide sniff snoop snore solid sonic south space spare spark spend spice spiky spine spire spite spoon spore sport spout spree squad stain stale stalk stall stamp stand start stash stave steal steam steed steep steer stern stick stiff still sting stink stock stomp stood stool stoop store storm story stout stone straw strip stuck study stump stung stunt style suave sugar suite sunny surge swamp swear sweat sweet swept swirl swoon sword table talon tango taper taunt taste teach tease theft theme thick thief think threw throw tiara tiger tight timer toast tonic topaz torso total touch tough towel trace track trade trail train tramp trash trawl tread treat trend trial tribe trick tried trill trope troll troop trout trove truce truly trunk trust tulip tuner tunic twang tweed twirl twist ultra union unite vague valor valve vapor vault venom verge vigil viral vivid vocal vodka vogue voice wagon waltz watch weave wedge weird wheat while whine whirl widen widow witch witty woman world worry worse worst worth wrath write wrong yearn yield young youth zebra zingy'.split(' ');
+      WORDS = 'about above abuse actor acute admit adopt adult after again agree ahead alarm album alert align allow alone along alter angel anger angle angry ankle apart apple apply arena argue arise armed armor array aside asset attic avoid awake award aware awful bacon baker basic beach beard beast began begin being below bench berry bible birth black blade blame bland blank blaze bleat bleed blend bless blind block blood bloom blown board bonus boost booth bound brain brand brave bread break breed brick bride brief bring broad brook broth brown build bunch burst cabin candy carry catch cause chain chair chalk chaos chase cheap check cheek chess chest chief china chunk cider civic civil claim clash class clean clear clerk click cliff climb cling clock close cloud coach color comet comic comfy coral count court cover crack craft crane crave crazy cream creed creek crisp cross crowd crown crude cruel curly cushy cycle daily dance daunt debut delay dense depth dirty disco dizzy dodge doubt dough draft drain drama drape drawn dream dress drift drink drive drove drown dunce dying eager eagle early earth eight elbow elder empty enjoy enter erase erect erupt evade event every exact exert exile exist extra fable facet fairy faith false fancy farce fatal fault feast fence fever fiber field fiery fifth fifty fixed flame flash flesh fleet flock flora floor focus forge found frail frank freak fresh front frost fruit funny fuzzy gamer gaudy given glare gleam glide globe gloom gloss glove grace grade grain grant grape grasp grave graze greed green greet grind groan groom gross group grove grown guard guava guide guild guilt guise happy hardy harsh haste haven heard heart heavy hedge helix hippo hobby holly honor horse hotel hound house hover human humor ideal image imply infer input irony issue ivory jazzy jelly jewel judge juice jumbo kitty knack knave kneel knife knock knoll known label lance large laser latch later layer learn lease leafy lemon level light liner lithe liver logic loose lucky lunar lunge lusty lyric magic major maker manor maple marsh match mayor media mercy merge merit metal might mirth miser model moist money month moose moral mouse muddy music naive nasty naval needy nerve night ninth noise noisy nomad north noted novel nudge nurse ocean offer olive onset opera optic orbit organ otter ought paint panda panic paper party pasta patio pearl penny perch phone photo piano piece pilot pizza place plain plane plank plate plaza pluck plumb plume plush power press pride prime print prism probe prone pulse queen query quest quiet quota quite radar radio range rapid raven reach realm rebel refer reign relax relay remix rider right risky risen rivet rocky rouge rough round royal rural rusty sadly saint salad sauce scene scone scope score scorn scout seven shame shape shark sharp shear sheer shelf shell shift shine shirt shore shout shown siege sight silly since skill skull slang slash slave sleep sleet slick slide slime sling sloop sloth slump small smash smear smile smite smoke snack snail snake snare sneak snide sniff snoop snore solid sonic south space spare spark spend spice spiky spine spire spite spoon spore sport spout spree squad stain stale stalk stall stamp stand start stash stave steal steam steed steep steer stern stick stiff still sting stink stock stomp stood stool stoop store storm story stout stone straw strip stuck study stump stung stunt style suave sugar suite sunny surge swamp swear sweat sweet swept swirl swoon sword table talon tango taper taunt taste teach tease theft theme thick thief think threw throw tiara tiger tight timer toast tonic topaz torso total touch tough towel trace track trade trail train tramp trash trawl tread treat trend trial tribe trick tried trill troll troop trout trove truce truly trunk trust tulip tuner tunic twang tweed twirl twist ultra union unite vague valor valve vapor vault venom verge vigil viral vivid vocal vodka vogue voice wagon waltz watch weave wedge weird wheat while whine whirl widen widow witch witty woman world worry worse worst worth wrath write wrong yearn yield young youth zebra zingy'.split(' ');
     }
+    document.getElementById('loadingMsg').style.display='none';
+    document.getElementById('board').style.display='';
   }
 
   /* STATS */
@@ -275,6 +324,7 @@
         const btn=document.createElement('button');
         btn.className='key'+(k.length>1?' wide':'');
         btn.textContent=k;btn.dataset.key=k;
+        btn.setAttribute('aria-label', k==='⌫'?'Backspace':k==='Enter'?'Enter':k.toUpperCase());
         btn.addEventListener('click',()=>handleKey(k));
         div.appendChild(btn);
       });
@@ -411,22 +461,58 @@
   /* STATS MODAL */
   document.getElementById('statsBtn').addEventListener('click',()=>{
     const s=loadStats();
-    fillStats(s,'ss-','ssDistChart');
+    const noData=document.getElementById('ssNoData');
+    const chart=document.getElementById('ssDistChart');
+    if(s.played===0){
+      noData.style.display='';
+      chart.style.display='none';
+    } else {
+      noData.style.display='none';
+      chart.style.display='';
+      fillStats(s,'ss-','ssDistChart');
+    }
+    document.getElementById('ss-played').textContent=s.played;
+    document.getElementById('ss-win').textContent=s.played?Math.round(s.won/s.played*100)+'%':'0%';
+    document.getElementById('ss-streak').textContent=s.streak;
+    document.getElementById('ss-max').textContent=s.maxStreak;
     document.getElementById('statsModal').classList.remove('hidden');
   });
   document.getElementById('closeStats').addEventListener('click',()=>document.getElementById('statsModal').classList.add('hidden'));
   document.getElementById('statsModal').addEventListener('click',e=>{if(e.target.id==='statsModal')document.getElementById('statsModal').classList.add('hidden');});
   document.getElementById('playAgain').addEventListener('click',startGame);
 
+  /* NEW GAME BUTTON */
+  document.getElementById('newGameBtn').addEventListener('click',()=>startGame());
+
+  /* HOW TO PLAY */
+  document.getElementById('helpBtn').addEventListener('click',()=>document.getElementById('helpModal').classList.remove('hidden'));
+  document.getElementById('closeHelp').addEventListener('click',()=>{
+    document.getElementById('helpModal').classList.add('hidden');
+    localStorage.setItem('kg_wordle_visited','1');
+  });
+  document.getElementById('helpModal').addEventListener('click',e=>{
+    if(e.target.id==='helpModal'){document.getElementById('helpModal').classList.add('hidden');localStorage.setItem('kg_wordle_visited','1');}
+  });
+
   /* THEME */
-  let isDark=false;document.documentElement.dataset.theme='light';
+  const _th=localStorage.getItem('kg_theme')||'light';
+  let isDark=_th==='dark';
+  document.documentElement.dataset.theme=_th;
+  document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+  document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
   document.getElementById('themeBtn').addEventListener('click',()=>{
-    isDark=!isDark;document.documentElement.dataset.theme=isDark?'dark':'light';
+    isDark=!isDark;const t=isDark?'dark':'light';
+    document.documentElement.dataset.theme=t;localStorage.setItem('kg_theme',t);
     document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
     document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
   });
 
-  loadWords().then(startGame);
+  /* INIT — show help on first visit */
+  if(!localStorage.getItem('kg_wordle_visited')){
+    loadWords().then(()=>{startGame();document.getElementById('helpModal').classList.remove('hidden');});
+  } else {
+    loadWords().then(startGame);
+  }
   </script>
 </body>
 </html>
