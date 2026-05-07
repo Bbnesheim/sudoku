@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>document.documentElement.dataset.theme=localStorage.getItem('kg_theme')||'light';</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -10,6 +9,7 @@
   <meta name="theme-color" id="themeColorMeta" content="#ffffff">
   <title>Sudoku | Karen's Garden</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+  <script>document.documentElement.dataset.theme=localStorage.getItem('kg_theme')||'light';</script>
   <style>
     :root {
       --bg: #f5f5f5; --surface: #ffffff; --text: #1a1a1a; --text-muted: #777;
@@ -21,12 +21,12 @@
       --numpad-btn: #e8e8f0; --ctrl-text: #555;
     }
     [data-theme="dark"] {
-      --bg: #1a1a2e; --surface: #16213e; --text: #e0e0e0; --text-muted: #888;
-      --border: #404080; --box-border: #9090b0; --cell-bg: #1e1e3a;
-      --clue-bg: #262648; --clue-text: #ffffff; --user-text: #93c5fd;
-      --sel-bg: rgba(251,191,36,0.42); --hl-region: rgba(100,149,237,0.45);
-      --hl-same: rgba(255,195,40,0.32); --error-color: #f87171;
-      --btn-bg: #252548; --btn-hover: #353568; --numpad-btn: #252548; --ctrl-text: #aaa;
+      --bg: #1a1a2e; --surface: #16213e; --text: #e8e8f2; --text-muted: #9090b0;
+      --border: #50508a; --box-border: #c0c0e0; --cell-bg: #1e1e3c;
+      --clue-bg: #2e2e60; --clue-text: #ffffff; --user-text: #93c5fd;
+      --sel-bg: rgba(251,191,36,0.50); --hl-region: rgba(100,149,237,0.25);
+      --hl-same: rgba(255,195,40,0.40); --error-color: #f87171;
+      --btn-bg: #252550; --btn-hover: #383878; --numpad-btn: #252550; --ctrl-text: #c0c0d8;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; }
@@ -197,13 +197,6 @@
       40%     { box-shadow: inset 0 0 0 3px rgba(139,92,246,0.9); background: rgba(139,92,246,0.22) !important; }
     }
     .cell.hint-hl { animation: hint-pulse 1s ease-in-out 2; background: rgba(139,92,246,0.12) !important; }
-    /* Error counter */
-    .error-counter { font-size: 0.78rem; font-weight: 700; color: var(--error-color); letter-spacing: 0.5px; min-width: 44px; text-align: center; }
-    /* Timer penalty flash */
-    @keyframes timer-penalty { 0%{color:var(--text)} 40%{color:var(--error-color);transform:scale(1.22)} 100%{color:var(--text);transform:scale(1)} }
-    .timer.flash-penalty { animation: timer-penalty 0.65s ease; }
-    /* Win score */
-    .win-score { font-size: 1.05rem; font-weight: 800; color: #f59e0b; margin: 0 0 4px; }
     /* Pause */
     body.paused .board    { filter: blur(12px); }
     body.paused .controls { filter: blur(12px); pointer-events: none; }
@@ -252,7 +245,6 @@
 
   <div class="game-info">
     <span class="difficulty-label" id="diffLabel">—</span>
-    <span class="error-counter" id="errorCounter"></span>
     <span class="timer" id="timer">00:00</span>
   </div>
 
@@ -302,22 +294,9 @@
       <h2>Solved!</h2>
       <div class="win-time" id="winTime">--:--</div>
       <p class="win-detail" id="winDetail">Medium difficulty</p>
-      <p class="win-score" id="winScore"></p>
       <p class="win-record" id="winRecord"></p>
       <div class="modal-actions">
         <button class="btn-primary" id="winNewGame">Play Again</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- GAME OVER MODAL -->
-  <div class="overlay hidden" id="gameOverModal">
-    <div class="modal">
-      <div class="win-icon">💀</div>
-      <h2>Game Over</h2>
-      <p class="win-detail" id="gameOverDetail"></p>
-      <div class="modal-actions">
-        <button class="btn-primary" id="gameOverNewGame">Try Again</button>
       </div>
     </div>
   </div>
@@ -337,7 +316,7 @@
 
   <!-- STATS MODAL -->
   <div class="overlay hidden" id="statsModal">
-    <div class="modal" style="width:min(98vw,480px)">
+    <div class="modal" style="width:min(96vw,440px)">
       <h2>Statistics</h2>
       <div id="statsTableWrap"></div>
       <div class="modal-actions" style="margin-top:4px">
@@ -420,12 +399,12 @@
 
   /* DIFFICULTY */
   const DIFFS=[
-    {name:'Baby',    sub:'~55 clues', clues:55, maxErrors:3, scoreBase:100},
-    {name:'Easy',    sub:'~46 clues', clues:46, maxErrors:3, scoreBase:300},
-    {name:'Medium',  sub:'~38 clues', clues:38, maxErrors:3, scoreBase:600},
-    {name:'Hard',    sub:'~32 clues', clues:32, maxErrors:3, scoreBase:1000},
-    {name:'Expert',  sub:'~28 clues', clues:28, maxErrors:5, scoreBase:1500},
-    {name:'Extreme', sub:'~24 clues', clues:24, maxErrors:5, scoreBase:2200},
+    {name:'Baby',    sub:'~55 clues', clues:55},
+    {name:'Easy',    sub:'~46 clues', clues:46},
+    {name:'Medium',  sub:'~38 clues', clues:38},
+    {name:'Hard',    sub:'~32 clues', clues:32},
+    {name:'Expert',  sub:'~28 clues', clues:28},
+    {name:'Extreme', sub:'~24 clues', clues:24},
   ];
 
   /* PERSONAL BESTS */
@@ -436,18 +415,6 @@
     return false;
   }
 
-  /* BEST SCORES */
-  function getBestScore(name){return(JSON.parse(localStorage.getItem('kg_sudoku_score')||'{}')||{})[name]??null;}
-  function setBestScore(name,score){
-    const d=JSON.parse(localStorage.getItem('kg_sudoku_score')||'{}');
-    if(d[name]==null||score>d[name]){d[name]=score;localStorage.setItem('kg_sudoku_score',JSON.stringify(d));return true;}
-    return false;
-  }
-  function calcScore(diffIdx,timerSec){
-    const bases=[100,300,600,1000,1500,2200];
-    return Math.max(1,Math.round(bases[diffIdx]*300/Math.max(timerSec,30)));
-  }
-
   /* STATS */
   function getSudokuStats(){
     const def={};DIFFS.forEach(d=>{def[d.name]={played:0,won:0,totalTime:0};});
@@ -456,7 +423,7 @@
   function saveSudokuStats(s){localStorage.setItem('kg_sudoku_stats',JSON.stringify(s));}
 
   /* STATE */
-  const G={board:[],solution:null,selected:-1,pencil:false,history:[],diffIdx:2,timerSec:0,timerID:null,won:false,gameOver:false,errorCount:0,hintCell:-1,cfg:{conflicts:true,highlightSame:true,autoNotes:true}};
+  const G={board:[],solution:null,selected:-1,pencil:false,history:[],diffIdx:2,timerSec:0,timerID:null,won:false,hintCell:-1,cfg:{conflicts:true,highlightSame:true,autoNotes:true}};
   let pendingDiff=2,G_paused=false;
 
   /* PAUSE */
@@ -482,10 +449,9 @@
     const{arr,solution}=generatePuzzle(diffIdx);
     G.board=arr.map(v=>({value:v,clue:v!==0,notes:new Set()}));
     G.solution=solution; G.diffIdx=diffIdx; G.selected=-1; G.pencil=false;
-    G.history=[]; G.timerSec=0; G.won=false; G.gameOver=false; G.errorCount=0; G.hintCell=-1;
+    G.history=[]; G.timerSec=0; G.won=false; G.hintCell=-1;
     document.getElementById('diffLabel').textContent=DIFFS[diffIdx].name;
     document.getElementById('timer').textContent='00:00';
-    document.getElementById('errorCounter').textContent='';
     setPencil(false); render(); updateNumpad(); startTimer();
     const _st=getSudokuStats();_st[DIFFS[diffIdx].name].played++;saveSudokuStats(_st);
   }
@@ -539,16 +505,6 @@
     }
     render(); updateNumpad();
     if(num>0){const el=document.querySelectorAll('.cell')[sel];if(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}}
-    if(num>0&&!G.pencil&&+G.solution[sel]!==num){
-      G.errorCount++;
-      G.timerSec+=15;
-      const te=document.getElementById('timer');
-      te.textContent=fmt(G.timerSec);
-      te.classList.remove('flash-penalty');void te.offsetWidth;te.classList.add('flash-penalty');
-      te.addEventListener('animationend',()=>te.classList.remove('flash-penalty'),{once:true});
-      updateErrorDisplay();
-      if(G.errorCount>=DIFFS[G.diffIdx].maxErrors){triggerGameOver();return;}
-    }
     if(num>0)checkWin();
   }
   function erase(){
@@ -556,20 +512,6 @@
     if(sel<0||G.board[sel].clue||G.won||G_paused)return;
     const d=G.board[sel];if(d.value===0&&d.notes.size===0)return;
     snapshot(); d.value=0; d.notes.clear(); render(); updateNumpad();
-  }
-
-  /* ERROR TRACKING */
-  function updateErrorDisplay(){
-    const max=DIFFS[G.diffIdx].maxErrors;
-    document.getElementById('errorCounter').textContent=G.errorCount>0?`✕ ${G.errorCount}/${max}`:'';
-  }
-  function triggerGameOver(){
-    G.won=true;G.gameOver=true;stopTimer();
-    const diffName=DIFFS[G.diffIdx].name;
-    setTimeout(()=>{
-      document.getElementById('gameOverDetail').textContent=`${DIFFS[G.diffIdx].maxErrors} mistakes on ${diffName} — better luck next time!`;
-      document.getElementById('gameOverModal').classList.remove('hidden');
-    },400);
   }
 
   /* UNDO */
@@ -610,17 +552,14 @@
     G.won=true;stopTimer();launchConfetti();
     const diffName=DIFFS[G.diffIdx].name;
     const isNew=setBest(diffName,G.timerSec);
-    const score=calcScore(G.diffIdx,G.timerSec);
-    const isNewScore=setBestScore(diffName,score);
     const _st2=getSudokuStats();_st2[diffName].won++;_st2[diffName].totalTime+=G.timerSec;saveSudokuStats(_st2);
     const best=getBest(diffName);
     setTimeout(()=>{
       document.getElementById('winTime').textContent=fmt(G.timerSec);
       document.getElementById('winDetail').textContent=diffName+' difficulty';
-      document.getElementById('winScore').textContent='Score: '+score+' pts'+(isNewScore?' ★ New Best!':'');
       const rec=document.getElementById('winRecord');
-      if(isNew){rec.textContent='🏆 New Personal Best Time!';rec.className='win-record new-pb';}
-      else{rec.textContent='Best Time: '+fmt(best);rec.className='win-record';}
+      if(isNew){rec.textContent='🏆 New Personal Best!';rec.className='win-record new-pb';}
+      else{rec.textContent='Best: '+fmt(best);rec.className='win-record';}
       document.getElementById('winModal').classList.remove('hidden');
     },800);
   }
@@ -650,6 +589,7 @@
     const er=document.createElement('button');er.className='num-btn erase-btn';er.textContent='⌫';
     er.addEventListener('click',()=>{
       if(G.pencil){
+        // In notes mode: clear pencil marks only
         const sel=G.selected;
         if(sel<0||G.board[sel].clue||G.won||G_paused)return;
         const d=G.board[sel];if(d.notes.size===0)return;
@@ -677,14 +617,11 @@
   /* DIFF GRID */
   function buildDiffGrid(){
     const grid=document.getElementById('diffGrid');grid.innerHTML='';
-    const scores=JSON.parse(localStorage.getItem('kg_sudoku_score')||'{}');
     DIFFS.forEach((d,i)=>{
       const btn=document.createElement('button');
       btn.className='diff-btn'+(i===pendingDiff?' chosen':'');
       const best=getBest(d.name);
-      const sc=scores[d.name];
-      const sub=sc!=null?'★ '+sc+' pts':best!=null?'⏱ '+fmt(best):d.sub;
-      btn.innerHTML=`${d.name}<span class="diff-sub">${sub}</span>`;
+      btn.innerHTML=`${d.name}<span class="diff-sub">${best!=null?'⏱ '+fmt(best):d.sub}</span>`;
       btn.addEventListener('click',()=>{pendingDiff=i;document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('chosen'));btn.classList.add('chosen');});
       grid.appendChild(btn);
     });
@@ -735,14 +672,12 @@
   function showStatsModal(){
     const st=getSudokuStats();
     const best=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');
-    const scores=JSON.parse(localStorage.getItem('kg_sudoku_score')||'{}');
-    let html='<table class="stats-table"><tr><th>Mode</th><th>Played</th><th>Won</th><th>Win%</th><th>Best Time</th><th>Best Score</th></tr>';
+    let html='<table class="stats-table"><tr><th>Mode</th><th>Played</th><th>Won</th><th>Win%</th><th>Best</th></tr>';
     DIFFS.forEach(d=>{
       const s=st[d.name]||{played:0,won:0,totalTime:0};
       const b=best[d.name];
-      const sc=scores[d.name];
       const pct=s.played?Math.round(s.won/s.played*100):0;
-      html+=`<tr><td>${d.name}</td><td>${s.played}</td><td>${s.won}</td><td>${s.played?pct+'%':'—'}</td><td>${b!=null?fmt(b):'—'}</td><td>${sc!=null?sc:'—'}</td></tr>`;
+      html+=`<tr><td>${d.name}</td><td>${s.played}</td><td>${s.won}</td><td>${s.played?pct+'%':'—'}</td><td>${b!=null?fmt(b):'—'}</td></tr>`;
     });
     html+='</table>';
     if(!DIFFS.some(d=>(st[d.name]||{}).played>0))html='<p style="text-align:center;color:var(--text-muted);padding:16px 0;font-size:0.85rem">No games completed yet.</p>';
@@ -767,12 +702,6 @@
   });
   document.getElementById('winNewGame').addEventListener('click',()=>{
     document.getElementById('winModal').classList.add('hidden');
-    pendingDiff=G.diffIdx;buildDiffGrid();
-    document.getElementById('cancelNew').style.display='';
-    document.getElementById('newModal').classList.remove('hidden');
-  });
-  document.getElementById('gameOverNewGame').addEventListener('click',()=>{
-    document.getElementById('gameOverModal').classList.add('hidden');
     pendingDiff=G.diffIdx;buildDiffGrid();
     document.getElementById('cancelNew').style.display='';
     document.getElementById('newModal').classList.remove('hidden');

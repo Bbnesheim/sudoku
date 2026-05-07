@@ -305,6 +305,7 @@ foamy
 focus
 force
 forge
+fork
 found
 frail
 frank
@@ -914,6 +915,7 @@ write
 wrong
 yacht
 yearn
+yeoman
 yield
 young
 youth
