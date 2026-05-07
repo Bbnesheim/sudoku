@@ -128,12 +128,12 @@
 
   function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
 
-  // Sudoku stat
-  const sb=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');
+  // Sudoku stat — show best score across all difficulties
+  const sb=JSON.parse(localStorage.getItem('kg_sudoku_score')||'{}');
   const sbEntries=Object.entries(sb);
   if(sbEntries.length){
-    const best=sbEntries.sort((a,b)=>a[1]-b[1])[0];
-    document.getElementById('sudokuStat').textContent='⏱ Best: '+fmt(best[1])+' ('+best[0]+')';
+    const best=sbEntries.sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('sudokuStat').textContent='★ Best Score: '+best[1]+' pts ('+best[0]+')';
   }
 
   // Wordle stat
