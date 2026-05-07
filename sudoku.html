@@ -7,7 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Sudoku">
   <meta name="theme-color" id="themeColorMeta" content="#ffffff">
-  <title>Sudoku</title>
+  <title>Sudoku | Karen's Garden</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
   <style>
     :root {
       --bg: #f5f5f5; --surface: #ffffff; --text: #1a1a1a; --text-muted: #777;
@@ -86,9 +87,9 @@
     .cell.hl-region { background: var(--hl-region); }
     .cell.hl-same   { background: var(--hl-same); }
     .cell.selected  { background: var(--sel-bg) !important; }
-    .cell.error     { color: var(--error-color) !important; }
+    .cell.error     { color: var(--error-color) !important; background: rgba(220,38,38,0.10) !important; }
     .notes { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); padding: 1px; pointer-events: none; }
-    .note-num { display: flex; align-items: center; justify-content: center; font-size: clamp(7px,1.8vw,10px); font-weight: 500; color: var(--text-muted); }
+    .note-num { display: flex; align-items: center; justify-content: center; font-size: clamp(9px,2.2vw,13px); font-weight: 500; color: var(--text-muted); }
     .controls {
       width: 100%; max-width: 520px;
       display: flex; justify-content: space-around; padding: 4px 8px 2px; gap: 4px; flex-shrink: 0;
@@ -201,13 +202,25 @@
     body.paused .numpad   { filter: blur(12px); pointer-events: none; }
     .pause-veil {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.45);
+      background: rgba(0,0,0,0.82);
       align-items: center; justify-content: center;
       flex-direction: column; gap: 10px; z-index: 98; cursor: pointer;
     }
     body.paused .pause-veil { display: flex; }
     .pause-veil-label { color: #fff; font-size: 1.8rem; font-weight: 800; letter-spacing: 6px; }
     .pause-veil-hint  { color: rgba(255,255,255,0.65); font-size: 0.8rem; letter-spacing: 1px; }
+    /* Stats table */
+    .stats-table { width:100%; border-collapse:collapse; font-size:0.78rem; margin:12px 0 4px; }
+    .stats-table th { color:var(--text-muted); font-size:0.6rem; text-transform:uppercase; letter-spacing:1px; padding:4px 6px; text-align:center; font-weight:600; }
+    .stats-table th:first-child { text-align:left; }
+    .stats-table td { padding:7px 6px; text-align:center; border-top:1px solid var(--border); }
+    .stats-table td:first-child { text-align:left; font-weight:700; }
+    .stats-table tr:first-child td { border-top:none; }
+    /* Help content */
+    .help-section { margin-bottom:12px; }
+    .help-section h3 { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:6px; }
+    .help-section p { font-size:0.82rem; line-height:1.55; margin-bottom:4px; }
+    .help-section code { background:var(--btn-bg); padding:1px 5px; border-radius:4px; font-size:0.75rem; font-family:monospace; }
     @media (max-height: 680px) {
       .num-btn { min-height: 44px; font-size: 1.25rem; }
       .numpad  { gap: 4px; padding-bottom: 6px; }
@@ -221,6 +234,8 @@
     <a href="index.html" class="icon-btn" aria-label="Home">🏡</a>
     <h1>SUDOKU</h1>
     <div class="header-right">
+      <button class="icon-btn" id="helpBtn" aria-label="How to Play">❓</button>
+      <button class="icon-btn" id="statsBtn" aria-label="Statistics">📊</button>
       <button class="icon-btn" id="pauseBtn" aria-label="Pause">⏸️</button>
       <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">☀️</button>
       <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
@@ -298,6 +313,46 @@
     </div>
   </div>
 
+  <!-- STATS MODAL -->
+  <div class="overlay hidden" id="statsModal">
+    <div class="modal" style="width:min(96vw,440px)">
+      <h2>Statistics</h2>
+      <div id="statsTableWrap"></div>
+      <div class="modal-actions" style="margin-top:4px">
+        <button class="btn-primary" id="closeStatsModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP MODAL -->
+  <div class="overlay hidden" id="helpModal">
+    <div class="modal" style="text-align:left;max-height:85vh;overflow-y:auto">
+      <h2 style="text-align:center;margin-bottom:14px">How to Play</h2>
+      <div class="help-section">
+        <h3>Rules</h3>
+        <p>Fill every row, column, and 3×3 box with digits 1–9 with no repeats. Each puzzle has exactly one unique solution.</p>
+      </div>
+      <div class="help-section">
+        <h3>Controls</h3>
+        <p>💡 <b>Hint</b> — highlights a cell whose pencil marks contain the correct answer</p>
+        <p>👁 <b>Reveal Cell</b> — fills a random empty cell with the correct number</p>
+        <p>✓ <b>Check Cell</b> — flashes green if correct, red if wrong</p>
+        <p>✏️ <b>Notes</b> — toggle pencil mode to write candidate numbers in cells</p>
+        <p>⌫ <b>Erase (toolbar)</b> — clears a cell's value AND all pencil marks</p>
+        <p>⌫ <b>Backspace (numpad)</b> — in notes mode clears pencil marks only; in normal mode clears value</p>
+      </div>
+      <div class="help-section">
+        <h3>Keyboard Shortcuts</h3>
+        <p><code>1–9</code> Enter number &nbsp;·&nbsp; <code>0</code> / <code>Del</code> Erase cell</p>
+        <p><code>↑↓←→</code> Navigate grid &nbsp;·&nbsp; <code>P</code> Toggle notes mode</p>
+        <p><code>Ctrl+Z</code> Undo &nbsp;·&nbsp; <code>Esc</code> / <code>Space</code> Pause/resume</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="closeHelpModal">Got it!</button>
+      </div>
+    </div>
+  </div>
+
   <script>
 
   /* ENGINE */
@@ -359,6 +414,13 @@
     return false;
   }
 
+  /* STATS */
+  function getSudokuStats(){
+    const def={};DIFFS.forEach(d=>{def[d.name]={played:0,won:0,totalTime:0};});
+    try{return Object.assign(def,JSON.parse(localStorage.getItem('kg_sudoku_stats')||'{}'));}catch(e){return def;}
+  }
+  function saveSudokuStats(s){localStorage.setItem('kg_sudoku_stats',JSON.stringify(s));}
+
   /* STATE */
   const G={board:[],solution:null,selected:-1,pencil:false,history:[],diffIdx:2,timerSec:0,timerID:null,won:false,hintCell:-1,cfg:{conflicts:true,highlightSame:true,autoNotes:true}};
   let pendingDiff=2,G_paused=false;
@@ -390,6 +452,7 @@
     document.getElementById('diffLabel').textContent=DIFFS[diffIdx].name;
     document.getElementById('timer').textContent='00:00';
     setPencil(false); render(); updateNumpad(); startTimer();
+    const _st=getSudokuStats();_st[DIFFS[diffIdx].name].played++;saveSudokuStats(_st);
   }
 
   /* RENDER */
@@ -488,6 +551,7 @@
     G.won=true;stopTimer();launchConfetti();
     const diffName=DIFFS[G.diffIdx].name;
     const isNew=setBest(diffName,G.timerSec);
+    const _st2=getSudokuStats();_st2[diffName].won++;_st2[diffName].totalTime+=G.timerSec;saveSudokuStats(_st2);
     const best=getBest(diffName);
     setTimeout(()=>{
       document.getElementById('winTime').textContent=fmt(G.timerSec);
@@ -521,7 +585,16 @@
   function buildNumpad(){
     const pad=document.getElementById('numpad');
     for(let n=1;n<=9;n++){const btn=document.createElement('button');btn.className='num-btn';btn.dataset.n=n;btn.textContent=n;btn.addEventListener('click',()=>inputNum(n));pad.appendChild(btn);}
-    const er=document.createElement('button');er.className='num-btn erase-btn';er.textContent='⌫';er.addEventListener('click',erase);pad.appendChild(er);
+    const er=document.createElement('button');er.className='num-btn erase-btn';er.textContent='⌫';
+    er.addEventListener('click',()=>{
+      if(G.pencil){
+        const sel=G.selected;
+        if(sel<0||G.board[sel].clue||G.won||G_paused)return;
+        const d=G.board[sel];if(d.notes.size===0)return;
+        snapshot();d.notes.clear();render();
+      }else{erase();}
+    });
+    pad.appendChild(er);
   }
   function updateNumpad(){
     const counts=Array(10).fill(0);G.board.forEach(d=>{if(d.value>0)counts[d.value]++;});
@@ -574,9 +647,14 @@
   });
 
   /* THEME */
-  let isDark=false;document.documentElement.dataset.theme='light';
+  const _th=localStorage.getItem('kg_theme')||'light';
+  let isDark=_th==='dark';
+  document.documentElement.dataset.theme=_th;
+  document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+  document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
   document.getElementById('themeBtn').addEventListener('click',()=>{
-    isDark=!isDark;document.documentElement.dataset.theme=isDark?'dark':'light';
+    isDark=!isDark;const t=isDark?'dark':'light';
+    document.documentElement.dataset.theme=t;localStorage.setItem('kg_theme',t);
     document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
     document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
   });
@@ -587,6 +665,23 @@
   document.getElementById('cfgConflicts').addEventListener('change',e=>{G.cfg.conflicts=e.target.checked;render();});
   document.getElementById('cfgHighlightSame').addEventListener('change',e=>{G.cfg.highlightSame=e.target.checked;render();});
   document.getElementById('cfgAutoNotes').addEventListener('change',e=>{G.cfg.autoNotes=e.target.checked;});
+
+  /* STATS MODAL */
+  function showStatsModal(){
+    const st=getSudokuStats();
+    const best=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');
+    let html='<table class="stats-table"><tr><th>Mode</th><th>Played</th><th>Won</th><th>Win%</th><th>Best</th></tr>';
+    DIFFS.forEach(d=>{
+      const s=st[d.name]||{played:0,won:0,totalTime:0};
+      const b=best[d.name];
+      const pct=s.played?Math.round(s.won/s.played*100):0;
+      html+=`<tr><td>${d.name}</td><td>${s.played}</td><td>${s.won}</td><td>${s.played?pct+'%':'—'}</td><td>${b!=null?fmt(b):'—'}</td></tr>`;
+    });
+    html+='</table>';
+    if(!DIFFS.some(d=>(st[d.name]||{}).played>0))html='<p style="text-align:center;color:var(--text-muted);padding:16px 0;font-size:0.85rem">No games completed yet.</p>';
+    document.getElementById('statsTableWrap').innerHTML=html;
+    document.getElementById('statsModal').classList.remove('hidden');
+  }
 
   /* NEW GAME FLOW */
   document.getElementById('newBtn').addEventListener('click',()=>{
@@ -625,6 +720,14 @@
     const menu=document.getElementById('hintMenu');
     if(!menu.classList.contains('hidden')&&!document.getElementById('hintBtn').contains(e.target)&&!menu.contains(e.target))closeHintMenu();
   });
+
+  /* HELP & STATS */
+  document.getElementById('helpBtn').addEventListener('click',()=>document.getElementById('helpModal').classList.remove('hidden'));
+  document.getElementById('closeHelpModal').addEventListener('click',()=>document.getElementById('helpModal').classList.add('hidden'));
+  document.getElementById('helpModal').addEventListener('click',e=>{if(e.target.id==='helpModal')document.getElementById('helpModal').classList.add('hidden');});
+  document.getElementById('statsBtn').addEventListener('click',showStatsModal);
+  document.getElementById('closeStatsModal').addEventListener('click',()=>document.getElementById('statsModal').classList.add('hidden'));
+  document.getElementById('statsModal').addEventListener('click',e=>{if(e.target.id==='statsModal')document.getElementById('statsModal').classList.add('hidden');});
 
   /* INIT */
   buildBoard();buildNumpad();

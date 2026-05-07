@@ -8,6 +8,7 @@
   <meta name="apple-mobile-web-app-title" content="Karen's Garden">
   <meta name="theme-color" id="themeColorMeta" content="#ffffff">
   <title>Karen's Garden</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
   <link rel="manifest" id="manifestLink">
   <style>
     :root {
@@ -41,9 +42,14 @@
       font-size: 1rem; transition: background 0.2s;
     }
     .icon-btn:hover { background: var(--btn-hover); }
+    .tagline {
+      width: 100%; max-width: 480px;
+      padding: 10px 20px 0;
+      font-size: 0.82rem; color: var(--text-muted);
+    }
     main {
       width: 100%; max-width: 480px; flex: 1;
-      padding: 28px 20px 32px; display: flex; flex-direction: column; gap: 14px;
+      padding: 22px 20px 32px; display: flex; flex-direction: column; gap: 14px;
     }
     .section-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; padding-left: 2px; }
     .game-card {
@@ -82,6 +88,8 @@
     <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">☀️</button>
   </header>
 
+  <div class="tagline">Pick a puzzle, take a break 🌿</div>
+
   <main>
     <div class="section-label">Games</div>
 
@@ -112,7 +120,7 @@
     const m={name:"Karen's Garden",short_name:"Garden",start_url:"./",display:"standalone",background_color:"#ffffff",theme_color:"#e94560",icons:[{src:`data:image/svg+xml,${icon}`,sizes:"any",type:"image/svg+xml",purpose:"any maskable"}]};
     document.getElementById('manifestLink').href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/manifest+json'}));
     if('serviceWorker' in navigator){
-      const sw=`const C='kg-v3';self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(['./','./sudoku.html','./wordle.html','./words.txt'])));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const cl=res.clone();caches.open(C).then(c=>c.put(e.request,cl));return res;})));});`;
+      const sw=`const C='kg-v4';self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(['./','./sudoku.html','./wordle.html','./words.txt'])));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const cl=res.clone();caches.open(C).then(c=>c.put(e.request,cl));return res;})));});`;
       navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
     }
   })();
@@ -134,12 +142,20 @@
     document.getElementById('wordleStat').textContent=`🏆 ${ws.won}/${ws.played} wins · ${pct}% · Streak: ${ws.streak}`;
   }
 
-  // Theme
-  let isDark=false;document.documentElement.dataset.theme='light';
+  // Theme — persist via localStorage
+  const savedTheme=localStorage.getItem('kg_theme')||'light';
+  let isDark=savedTheme==='dark';
+  document.documentElement.dataset.theme=isDark?'dark':'light';
+  document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+  document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
+
   document.getElementById('themeBtn').addEventListener('click',()=>{
-    isDark=!isDark;document.documentElement.dataset.theme=isDark?'dark':'light';
+    isDark=!isDark;
+    const theme=isDark?'dark':'light';
+    document.documentElement.dataset.theme=theme;
     document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
     document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
+    localStorage.setItem('kg_theme',theme);
   });
   </script>
 </body>
