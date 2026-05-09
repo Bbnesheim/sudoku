@@ -44,12 +44,12 @@
 
     <!-- icon-pause: Two vertical bars -->
     <symbol id="icon-pause" viewBox="0 0 24 24">
-      <path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor"/>
     </symbol>
 
     <!-- icon-play: Right-pointing triangle -->
     <symbol id="icon-play" viewBox="0 0 24 24">
-      <path d="M5 3l14 9-14 9V3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M5 3l14 9-14 9V3z" fill="currentColor"/>
     </symbol>
 
     <!-- icon-undo: Arrow curving left -->
