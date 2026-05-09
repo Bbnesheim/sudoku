@@ -130,7 +130,6 @@
         <button id="closeLeaderboard" style="background:none;border:none;font-size:1.4rem;cursor:pointer;padding:0">&times;</button>
       </div>
       <div id="leaderboardContent"></div>
-      <p style="font-size:0.75rem;color:var(--text-muted);margin-top:12px;text-align:center">Global leaderboard coming soon</p>
     </div>
   </div>
 
@@ -227,10 +226,10 @@
 
   // Sudoku stat
   const sb=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');
-  const sbEntries=Object.entries(sb);
+  const sbEntries=Object.entries(sb).filter(([,v])=>v&&typeof v==='object'&&v.time!=null);
   if(sbEntries.length){
-    const best=sbEntries.sort((a,b)=>a[1]-b[1])[0];
-    document.getElementById('sudokuStat').textContent='⏱ Best: '+fmt(best[1])+' ('+best[0]+')';
+    const best=sbEntries.sort((a,b)=>a[1].time-b[1].time)[0];
+    document.getElementById('sudokuStat').textContent='🏆 '+best[1].score+' pts · ⏱ '+fmt(best[1].time)+' ('+best[0]+')';
   }
 
   // Wordle stat
@@ -270,13 +269,14 @@
     const sb=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');
     const st=JSON.parse(localStorage.getItem('kg_sudoku_stats')||'{}');
     let html='';
-    if(Object.keys(sb).length===0){
+    const entries=Object.entries(sb).filter(([,v])=>v&&typeof v==='object'&&v.time!=null);
+    if(entries.length===0){
       html='<p style="color:var(--text-muted);padding:16px 0;font-size:0.85rem">No games completed yet.</p>';
     }else{
       html='<table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin:12px 0 4px">';
-      html+='<tr style="color:var(--text-muted);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px"><th style="text-align:left;padding:4px 6px;font-weight:600">Difficulty</th><th style="padding:4px 6px;text-align:center;font-weight:600">Best Time</th></tr>';
-      Object.entries(sb).forEach(([diff,time])=>{
-        html+='<tr style="border-top:1px solid var(--border)"><td style="text-align:left;font-weight:700;padding:7px 6px">'+diff+'</td><td style="text-align:center;padding:7px 6px">'+fmt(time)+'</td></tr>';
+      html+='<tr style="color:var(--text-muted);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px"><th style="text-align:left;padding:4px 6px;font-weight:600">Difficulty</th><th style="padding:4px 6px;text-align:center;font-weight:600">Best Score</th><th style="padding:4px 6px;text-align:center;font-weight:600">Best Time</th></tr>';
+      entries.forEach(([diff,data])=>{
+        html+='<tr style="border-top:1px solid var(--border)"><td style="text-align:left;font-weight:700;padding:7px 6px">'+diff+'</td><td style="text-align:center;padding:7px 6px">'+data.score+' pts</td><td style="text-align:center;padding:7px 6px">'+fmt(data.time)+'</td></tr>';
       });
       html+='</table>';
     }
@@ -337,9 +337,10 @@
           newSpan.id='usernameDisplay';
           newSpan.style.cssText='cursor:text;font-weight:700;display:block;padding:10px;background:var(--btn-bg);border-radius:8px;word-break:break-word';
           newSpan.title='Click to edit';
-          if(newName&&user){
-            user.username=newName;
-            setUser(user);
+          if(newName){
+            const userObj=user||{id:generateUUID()};
+            userObj.username=newName;
+            setUser(userObj);
             newSpan.textContent=newName;
           }else{
             newSpan.textContent=currentName;
