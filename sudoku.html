@@ -940,7 +940,7 @@
       html+=`<div style="font-size:0.75rem;color:var(--text-muted);line-height:1.4">`;
       html+=`<div>★ ${b?b.score+' pts':'—'}</div>`;
       html+=`<div>⏱ ${b?fmt(b.time):'—'}</div>`;
-      html+=`<div>${s.played?s.won}/${s.played} · ${pct}%':'—'}</div>`;
+      html+=`<div>${s.played?`${s.won}/${s.played} · ${pct}%`:'—'}</div>`;
       html+=`</div></button>`;
     });
     html+='</div>';
