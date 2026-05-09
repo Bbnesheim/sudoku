@@ -36,8 +36,8 @@
     }
     .header-right { display: flex; gap: 6px; }
     .logo { display: flex; flex-direction: column; }
-    .logo-name  { font-size: 1.55rem; font-weight: 900; letter-spacing: 3px; color: var(--text); line-height: 1; padding-top: 10px;}
-    .logo-sub   { font-size: 0.92rem; letter-spacing: 3px; color: var(--accent); font-weight: 700; text-transform: uppercase; margin-top: 3px; }
+    .logo-name  { font-size: 1.55rem; font-weight: 900; letter-spacing: 3px; color: var(--text); line-height: 1; padding-top: 0;}
+    .logo-sub   { font-size: 1.2rem; letter-spacing: 3px; color: var(--accent); font-weight: 700; text-transform: uppercase; margin-top: 3px; }
     .icon-btn {
       background: var(--btn-bg); border: none; color: var(--text);
       width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
@@ -52,9 +52,9 @@
     }
     main {
       width: 100%; max-width: 480px; flex: 1;
-      padding: 22px 20px 32px; display: grid; grid-template-columns: 1fr; gap: 14px; grid-auto-rows: auto;
+      padding: 22px 20px 32px; display: flex; flex-direction: column; gap: 14px;
     }
-    .section-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; padding-left: 2px; grid-column: 1; }
+    .section-label { font-size: 1.25rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0; padding-left: 2px; }
     .game-card {
       display: flex; align-items: center; gap: 16px;
       background: var(--surface); border-radius: 20px; padding: 18px 20px;
@@ -75,7 +75,7 @@
       grid-column: 1; grid-row: 3;
     }
     .game-card[href="sudoku.html"] {
-      order: 1; grid-row: 2; min-height: auto; flex-direction: row; justify-content: flex-start; align-items: flex-start; padding: 16px 20px;
+      order: 1; grid-row: 2; min-height: 140px; flex-direction: row; justify-content: flex-start; align-items: center; padding: 16px 20px;
     }
     .game-card[href="sudoku.html"] .game-icon { width: 100px; height: 100px; font-size: 4rem; margin-right: 8px; margin-top: 0; flex-shrink: 0; }
     .game-card[href="sudoku.html"] .game-info { text-align: left; width: auto; flex: 1; padding-top: 0; }
@@ -84,7 +84,7 @@
     .game-card[href="sudoku.html"] .game-stat { font-size: 0.7rem; margin-top: 0; }
     .game-card[href="sudoku.html"] .game-arrow { display: none; }
     .game-card[href="wordle.html"] {
-      order: 2; grid-row: 3; padding: 12px 20px; min-height: auto; flex-direction: row; justify-content: flex-start; align-items: flex-start; gap: 12px;
+      order: 2; grid-row: 3; padding: 12px 20px; min-height: auto; flex-direction: row; justify-content: flex-start; align-items: center; gap: 12px;
     }
     .game-card[href="wordle.html"] .game-icon { width: 56px; height: 56px; margin: 0; margin-top: 0; flex-shrink: 0; }
     .game-card[href="wordle.html"] .game-name { font-size: 1rem; letter-spacing: 1px; margin-bottom: 2px; }
@@ -129,7 +129,6 @@
 
   <main>
     <div class="section-label">Games</div>
-
     <a href="sudoku.html" class="game-card">
       <div class="game-icon"><img src="assets/icons/icon-sudoku.svg" alt="Sudoku" width="100" height="100"></div>
       <div class="game-info">
