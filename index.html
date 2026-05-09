@@ -136,19 +136,24 @@
 
   <!-- Settings Modal -->
   <div id="settingsModal" class="overlay hidden">
-    <div class="modal">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <h2 style="margin:0">Settings</h2>
-        <button id="closeSettings" style="background:none;border:none;font-size:1.4rem;cursor:pointer;padding:0">&times;</button>
+    <div class="modal" style="text-align:left">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="margin:0;text-align:left">Settings</h2>
+        <button id="closeSettings" style="background:none;border:none;font-size:1.4rem;cursor:pointer;padding:0;color:var(--text)">&times;</button>
       </div>
       <div class="settings-rows">
-        <div class="s-row">
-          <span class="s-label">Username</span>
-          <span id="usernameDisplay" style="cursor:text;font-weight:700"></span>
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">Username</label>
+          <span id="usernameDisplay" style="cursor:text;font-weight:700;display:block;padding:10px;background:var(--btn-bg);border-radius:8px;word-break:break-word"></span>
+          <p style="font-size:0.65rem;color:var(--text-muted);margin-top:4px">Click to edit</p>
         </div>
-        <div class="s-row" style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
-          <span class="s-label" style="color:var(--error-color)">Clear All History</span>
-          <button id="clearHistoryBtn" class="btn-danger">Clear</button>
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+          <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#dc2626;margin-bottom:8px">Danger Zone</label>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:0.85rem">Clear All History</span>
+            <button id="clearHistoryBtn" class="btn-danger">Clear</button>
+          </div>
+          <p style="font-size:0.65rem;color:var(--text-muted);margin-top:6px">Permanently delete all game data</p>
         </div>
       </div>
     </div>
