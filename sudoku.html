@@ -444,12 +444,12 @@
 
   /* DIFFICULTY */
   const DIFFS=[
-    {name:'Easy',     sub:'~46 clues', clues:46},
-    {name:'Medium',   sub:'~38 clues', clues:38},
-    {name:'Hard',     sub:'~32 clues', clues:32},
-    {name:'Expert',   sub:'~28 clues', clues:28},
-    {name:'Extreme',  sub:'~24 clues', clues:24},
-    {name:'Nightmare',sub:'~20 clues', clues:20},
+    {name:'Easy',     clues:46},
+    {name:'Medium',   clues:38},
+    {name:'Hard',     clues:32},
+    {name:'Expert',   clues:28},
+    {name:'Extreme',  clues:24},
+    {name:'Nightmare',clues:20},
   ];
 
   /* SCORING CONFIG */
@@ -818,8 +818,8 @@
       const btn=document.createElement('button');
       btn.className='diff-btn'+(i===pendingDiff?' chosen':'');
       const best=getBest(d.name);
-      const subtext=best!=null?'⏱ '+fmt(best.time)+' · '+best.score+'pts':d.sub;
-      btn.innerHTML=`${d.name}<span class="diff-sub">${subtext}</span>`;
+      const subtext=best!=null?'⏱ '+fmt(best.time)+' · '+best.score+'pts':'';
+      btn.innerHTML=subtext?`${d.name}<span class="diff-sub">${subtext}</span>`:`${d.name}`;
       btn.addEventListener('click',()=>{pendingDiff=i;document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('chosen'));btn.classList.add('chosen');});
       grid.appendChild(btn);
     });
