@@ -222,6 +222,11 @@
     .help-section h3 { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:6px; }
     .help-section p { font-size:0.82rem; line-height:1.55; margin-bottom:4px; }
     .help-section code { background:var(--btn-bg); padding:1px 5px; border-radius:4px; font-size:0.75rem; font-family:monospace; }
+    .btn-danger {
+      background: transparent; border: 1.5px solid var(--error-color); color: var(--error-color);
+      padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+    }
+    .btn-danger:hover { background: rgba(220,38,38,0.08); }
     @media (max-height: 680px) {
       .num-btn { min-height: 44px; font-size: 1.25rem; }
       .numpad  { gap: 4px; padding-bottom: 6px; }
@@ -301,6 +306,28 @@
     </div>
   </div>
 
+  <!-- WELCOME MODAL -->
+  <div class="overlay hidden" id="welcomeModal">
+    <div class="modal">
+      <h2>Welcome! 🌸</h2>
+      <p class="sub">What's your name?</p>
+      <input type="text" id="welcomeUsernameInput" placeholder="Enter your name" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;margin-bottom:16px;background:var(--surface);color:var(--text);box-sizing:border-box;">
+      <div class="modal-actions"><button class="btn-primary" id="welcomeSubmit">Get Started</button></div>
+    </div>
+  </div>
+
+  <!-- CONFIRMATION MODAL -->
+  <div class="overlay hidden" id="confirmModal">
+    <div class="modal">
+      <h2 id="confirmTitle">Confirm</h2>
+      <p class="sub" id="confirmMsg"></p>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="confirmCancel">Cancel</button>
+        <button class="btn-danger" id="confirmOk">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SETTINGS MODAL -->
   <div class="overlay hidden" id="settingsModal">
     <div class="modal">
@@ -309,6 +336,18 @@
         <div class="s-row"><span class="s-label">Show Conflicts</span><label class="toggle"><input type="checkbox" id="cfgConflicts" checked><span class="t-slider"></span></label></div>
         <div class="s-row"><span class="s-label">Highlight Same Numbers</span><label class="toggle"><input type="checkbox" id="cfgHighlightSame" checked><span class="t-slider"></span></label></div>
         <div class="s-row"><span class="s-label">Auto-Remove Notes</span><label class="toggle"><input type="checkbox" id="cfgAutoNotes" checked><span class="t-slider"></span></label></div>
+        <div class="s-row" style="border-top:2px solid var(--border);margin-top:16px;padding-top:16px;">
+          <span class="s-label" id="usernameDisplay">—</span>
+          <button class="btn-ghost" id="editUsernameBtn" style="padding:6px 12px;font-size:0.8rem;">Edit</button>
+        </div>
+        <div class="s-row" id="usernameEditRow" style="display:none;">
+          <input type="text" id="usernameInput" placeholder="New name" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;background:var(--surface);color:var(--text);">
+          <button class="btn-primary" id="saveUsernameBtn" style="margin-left:8px;padding:6px 12px;font-size:0.8rem;">Save</button>
+        </div>
+        <div class="s-row" style="border-top:2px solid var(--border);margin-top:16px;padding-top:16px;flex-direction:column;align-items:flex-start;">
+          <span class="s-label" style="margin-bottom:10px;">Danger Zone</span>
+          <button class="btn-danger" id="clearHistoryBtn" style="width:100%;">Clear History</button>
+        </div>
       </div>
       <div class="modal-actions"><button class="btn-primary" id="closeSettings">Done</button></div>
     </div>
@@ -745,12 +784,75 @@
     document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
   });
 
+  /* USER MODEL */
+  function generateUUID(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});}
+  function getUser(){const raw=localStorage.getItem('kg_user');if(!raw)return null;try{return JSON.parse(raw);}catch(e){return null;}}
+  function setUser(user){localStorage.setItem('kg_user',JSON.stringify(user));}
+  function initializeUser(){
+    let user=getUser();
+    if(!user){return null;}return user;
+  }
+  function displayUsername(){
+    const user=getUser();
+    const name=user?.username||'Guest';
+    document.getElementById('usernameDisplay').textContent=name;
+  }
+
   /* SETTINGS */
-  document.getElementById('settingsBtn').addEventListener('click',()=>document.getElementById('settingsModal').classList.remove('hidden'));
+  document.getElementById('settingsBtn').addEventListener('click',()=>{
+    displayUsername();
+    document.getElementById('settingsModal').classList.remove('hidden');
+  });
   document.getElementById('closeSettings').addEventListener('click',()=>document.getElementById('settingsModal').classList.add('hidden'));
   document.getElementById('cfgConflicts').addEventListener('change',e=>{G.cfg.conflicts=e.target.checked;render();});
   document.getElementById('cfgHighlightSame').addEventListener('change',e=>{G.cfg.highlightSame=e.target.checked;render();});
   document.getElementById('cfgAutoNotes').addEventListener('change',e=>{G.cfg.autoNotes=e.target.checked;});
+  
+  /* USERNAME EDIT FLOW */
+  document.getElementById('editUsernameBtn').addEventListener('click',()=>{
+    const user=getUser();
+    document.getElementById('usernameInput').value=user?.username||'';
+    document.getElementById('usernameEditRow').style.display='flex';
+  });
+  document.getElementById('saveUsernameBtn').addEventListener('click',()=>{
+    const newName=document.getElementById('usernameInput').value.trim();
+    if(newName.length===0){alert('Please enter a name');return;}
+    const user=getUser();
+    if(user){user.username=newName;setUser(user);displayUsername();document.getElementById('usernameEditRow').style.display='none';}
+  });
+  
+  /* CLEAR HISTORY FLOW */
+  function showConfirmModal(title,msg,onConfirm){
+    document.getElementById('confirmTitle').textContent=title;
+    document.getElementById('confirmMsg').textContent=msg;
+    document.getElementById('confirmModal').classList.remove('hidden');
+    document.getElementById('confirmOk').onclick=()=>{
+      document.getElementById('confirmModal').classList.add('hidden');
+      onConfirm();
+    };
+    document.getElementById('confirmCancel').onclick=()=>{
+      document.getElementById('confirmModal').classList.add('hidden');
+    };
+  }
+  document.getElementById('clearHistoryBtn').addEventListener('click',()=>{
+    showConfirmModal('Clear History?','This will delete all game runs, stats, and records. This cannot be undone.',()=>{
+      localStorage.removeItem('kg_runs');
+      localStorage.removeItem('kg_best');
+      localStorage.removeItem('kg_sudoku_stats');
+      localStorage.removeItem('kg_sudoku_best');
+      showToast('History cleared!');
+    });
+  });
+  
+  /* WELCOME MODAL */
+  document.getElementById('welcomeSubmit').addEventListener('click',()=>{
+    const name=document.getElementById('welcomeUsernameInput').value.trim();
+    if(name.length===0){alert('Please enter your name');return;}
+    const user={username:name,stableId:generateUUID(),createdAt:new Date().toISOString()};
+    setUser(user);
+    document.getElementById('welcomeModal').classList.add('hidden');
+    displayUsername();
+  });
 
   /* STATS MODAL */
   function showStatsModal(){
