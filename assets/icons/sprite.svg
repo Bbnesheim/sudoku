@@ -54,8 +54,9 @@
 
     <!-- icon-undo: Arrow curving left -->
     <symbol id="icon-undo" viewBox="0 0 24 24">
-      <path d="M3 7v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M21 17a8 8 0 0 1-8 8 8 8 0 0 1-7.97-7M3 13a8 8 0 0 0 8 8 8 8 0 0 0 7.97-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 10h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M7 6l-4 4 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 10a9 9 0 0 1 9-7 9 9 0 0 1 9 9 9 9 0 0 1-9 9 9 9 0 0 1-7-3.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
 
     <!-- icon-erase: Rectangle with left-pointing notch (backspace) -->
@@ -72,7 +73,9 @@
 
     <!-- icon-lightbulb: Lightbulb outline -->
     <symbol id="icon-lightbulb" viewBox="0 0 24 24">
-      <path d="M9 18h6v3H9zM7 21h10M7 18a5 5 0 1 0 10 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M9 21h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M9 18h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M9 18c-1-1.5-3-3.5-3-6a6 6 0 1 1 12 0c0 2.5-2 4.5-3 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
 
     <!-- icon-eye: Eye outline -->
