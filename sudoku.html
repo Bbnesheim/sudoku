@@ -399,13 +399,32 @@
 
   /* DIFFICULTY */
   const DIFFS=[
-    {name:'Baby',    sub:'~55 clues', clues:55},
-    {name:'Easy',    sub:'~46 clues', clues:46},
-    {name:'Medium',  sub:'~38 clues', clues:38},
-    {name:'Hard',    sub:'~32 clues', clues:32},
-    {name:'Expert',  sub:'~28 clues', clues:28},
-    {name:'Extreme', sub:'~24 clues', clues:24},
+    {name:'Easy',     sub:'~46 clues', clues:46},
+    {name:'Medium',   sub:'~38 clues', clues:38},
+    {name:'Hard',     sub:'~32 clues', clues:32},
+    {name:'Expert',   sub:'~28 clues', clues:28},
+    {name:'Extreme',  sub:'~24 clues', clues:24},
+    {name:'Nightmare',sub:'~20 clues', clues:20},
   ];
+
+  /* SCORING CONFIG */
+  const SCORE_CONFIG=[
+    {base:10000,  par:240,  min:500,   reveal:1500, hint:750,  error:300},   // Easy
+    {base:20000,  par:420,  min:1000,  reveal:2500, hint:1250, error:500},   // Medium
+    {base:35000,  par:660,  min:2000,  reveal:4000, hint:2000, error:700},   // Hard
+    {base:60000,  par:1080, min:5000,  reveal:6000, hint:3000, error:1000},  // Expert
+    {base:100000, par:1800, min:10000, reveal:9000, hint:4500, error:1500},  // Extreme
+    {base:160000, par:2700, min:15000, reveal:12000,hint:6000, error:2000},  // Nightmare
+  ];
+
+  function calcScore(diffIdx,seconds,errors,hints,reveals,comboBonusPool,completionBonusPool){
+    const cfg=SCORE_CONFIG[diffIdx];
+    const timeBonus=Math.max(0,(cfg.par-seconds)/cfg.par);
+    const base=Math.round(cfg.base*(1+timeBonus));
+    const penalties=(reveals*cfg.reveal)+(hints*cfg.hint)+(errors*cfg.error);
+    const raw=base+comboBonusPool+completionBonusPool-penalties;
+    return Math.max(cfg.min,raw);
+  }
 
   /* PERSONAL BESTS */
   function getBest(name){return(JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}')||{})[name]??null;}
@@ -423,8 +442,13 @@
   function saveSudokuStats(s){localStorage.setItem('kg_sudoku_stats',JSON.stringify(s));}
 
   /* STATE */
-  const G={board:[],solution:null,selected:-1,pencil:false,history:[],diffIdx:2,timerSec:0,timerID:null,won:false,hintCell:-1,cfg:{conflicts:true,highlightSame:true,autoNotes:true}};
-  let pendingDiff=2,G_paused=false;
+  const G={
+    board:[],solution:null,selected:-1,pencil:false,history:[],diffIdx:2,timerSec:0,timerID:null,won:false,hintCell:-1,
+    cfg:{conflicts:true,highlightSame:true,autoNotes:true},
+    errors:0,hints:0,reveals:0,combo:0,lastInputTime:0,comboBonusPool:0,completionBonusPool:0,
+    completedRows:new Set(),completedCols:new Set(),completedBoxes:new Set(),completedNumbers:new Set()
+  };
+  let pendingDiff=1,G_paused=false;
 
   /* PAUSE */
   function togglePause(){
@@ -450,10 +474,64 @@
     G.board=arr.map(v=>({value:v,clue:v!==0,notes:new Set()}));
     G.solution=solution; G.diffIdx=diffIdx; G.selected=-1; G.pencil=false;
     G.history=[]; G.timerSec=0; G.won=false; G.hintCell=-1;
+    G.errors=0; G.hints=0; G.reveals=0; G.combo=0; G.lastInputTime=0; G.comboBonusPool=0; G.completionBonusPool=0;
+    G.completedRows.clear(); G.completedCols.clear(); G.completedBoxes.clear(); G.completedNumbers.clear();
     document.getElementById('diffLabel').textContent=DIFFS[diffIdx].name;
     document.getElementById('timer').textContent='00:00';
     setPencil(false); render(); updateNumpad(); startTimer();
     const _st=getSudokuStats();_st[DIFFS[diffIdx].name].played++;saveSudokuStats(_st);
+  }
+
+  /* COMBO SYSTEM */
+  function registerCombo(){
+    const now=Date.now();
+    const COMBO_WINDOW_MS=10000;
+    if(now-G.lastInputTime<COMBO_WINDOW_MS){G.combo=Math.min(G.combo+1,10);}
+    else{G.combo=1;}
+    G.lastInputTime=now;
+    const bonus=G.combo*10;
+    G.comboBonusPool+=bonus;
+    if(G.combo>=3){
+      const msg=`Combo ×${G.combo}! +${bonus}`;
+      showToast(msg);
+    }
+  }
+  function breakCombo(){G.combo=0;}
+  function showToast(msg){
+    const t=document.createElement('div');
+    t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:8px 16px;border-radius:20px;font-size:0.85rem;font-weight:700;z-index:300;pointer-events:none;animation:fadeInOut 2s ease';
+    t.textContent=msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),2000);
+  }
+  const style=document.createElement('style');
+  style.textContent='@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(10px)}50%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}';
+  document.head.appendChild(style);
+
+  /* COMPLETION BONUSES */
+  function isRowComplete(row){
+    for(let i=0;i<9;i++){const c=G.board[row*9+i];if(c.value===0||hasConflict(row*9+i,c.value))return false;}
+    return true;
+  }
+  function isColComplete(col){
+    for(let i=0;i<9;i++){const c=G.board[i*9+col];if(c.value===0||hasConflict(i*9+col,c.value))return false;}
+    return true;
+  }
+  function isBoxComplete(boxIdx){
+    const br=(boxIdx/3|0)*3,bc=(boxIdx%3)*3;
+    for(let r=br;r<br+3;r++)for(let c=bc;c<bc+3;c++){const idx=r*9+c,cel=G.board[idx];if(cel.value===0||hasConflict(idx,cel.value))return false;}
+    return true;
+  }
+  function isNumberComplete(num){
+    for(let i=0;i<81;i++){if(G.board[i].value===num&&hasConflict(i,num))return false;}
+    return G.board.filter(c=>c.value===num).length===9;
+  }
+  function checkCompletions(cellIndex,value){
+    const row=(cellIndex/9)|0,col=cellIndex%9,boxIdx=box(cellIndex);
+    if(isRowComplete(row)&&!G.completedRows.has(row)){G.completedRows.add(row);G.completionBonusPool+=500;showToast('Row complete! +500');}
+    if(isColComplete(col)&&!G.completedCols.has(col)){G.completedCols.add(col);G.completionBonusPool+=500;showToast('Column complete! +500');}
+    if(isBoxComplete(boxIdx)&&!G.completedBoxes.has(boxIdx)){G.completedBoxes.add(boxIdx);G.completionBonusPool+=750;showToast('Box complete! +750');}
+    if(isNumberComplete(value)&&!G.completedNumbers.has(value)){G.completedNumbers.add(value);G.completionBonusPool+=1000;showToast(`All ${value}s placed! +1000`);}
   }
 
   /* RENDER */
@@ -502,6 +580,10 @@
         const r=(sel/9)|0,c=sel%9;
         for(let i=0;i<81;i++){if(i===sel)continue;if((i/9|0)===r||i%9===c||box(i)===box(sel))G.board[i].notes.delete(num);}
       }
+      // Register combo on correct input (not for erased values)
+      if(num>0){registerCombo();checkCompletions(sel,num);}
+      // Track if this is an error
+      if(num>0&&hasConflict(sel,num)){breakCombo();G.errors++;}
     }
     render(); updateNumpad();
     if(num>0){const el=document.querySelectorAll('.cell')[sel];if(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}}
@@ -522,6 +604,7 @@
   function closeHintMenu(){document.getElementById('hintMenu').classList.add('hidden');}
   function doHint(){
     closeHintMenu();if(!G.solution||G.won)return;
+    G.hints++;
     const noteMatch=G.board.reduce((a,d,i)=>(!d.clue&&d.value===0&&d.notes.has(+G.solution[i])?[...a,i]:a),[]);
     const empty=noteMatch.length?noteMatch:G.board.reduce((a,d,i)=>(!d.clue&&d.value===0?[...a,i]:a),[]);
     if(!empty.length)return;
@@ -531,6 +614,7 @@
   }
   function revealCell(){
     closeHintMenu();if(!G.solution||G.won)return;
+    G.reveals++;
     const empty=G.board.reduce((a,d,i)=>(!d.clue&&d.value===0?[...a,i]:a),[]);
     if(!empty.length)return;
     const t=empty[Math.floor(Math.random()*empty.length)];
@@ -733,7 +817,7 @@
 
   /* INIT */
   buildBoard();buildNumpad();
-  pendingDiff=2;buildDiffGrid();
+  pendingDiff=1;buildDiffGrid();
   document.getElementById('cancelNew').style.display='none';
   document.getElementById('newModal').classList.remove('hidden');
   </script>
