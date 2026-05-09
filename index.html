@@ -181,29 +181,35 @@
     .modal {
       background: var(--surface); border-radius: 18px; padding: 24px 20px 20px;
       width: min(92vw,350px); text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-height: 85vh; overflow-y: auto;
     }
     .modal h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
     .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
     .btn-primary {
-      background: var(--accent); color: #fff; border: none; padding: 11px 26px;
+      background: var(--accent); color: #fff; border: none; padding: 10px 24px;
       border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+      flex: 1; max-width: 120px;
     }
     .btn-primary:hover { opacity: 0.84; }
+    .btn-primary:active { transform: scale(0.98); }
     .btn-ghost {
-      background: var(--btn-bg); color: var(--text); border: none; padding: 11px 20px;
+      background: var(--btn-bg); color: var(--text); border: none; padding: 10px 24px;
       border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+      flex: 1; max-width: 120px;
     }
     .btn-ghost:hover { background: var(--btn-hover); }
+    .btn-ghost:active { background: var(--btn-hover); }
     .btn-danger {
       background: transparent; border: 1.5px solid #dc2626; color: #dc2626;
-      padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+      padding: 8px 16px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+      transition: all 0.15s;
     }
     .btn-danger:hover { background: rgba(220,38,38,0.08); }
+    .btn-danger:active { transform: scale(0.95); }
     .settings-rows { text-align: left; margin: 12px 0 0; }
     .s-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .s-row:last-child { border-bottom: none; }
     .s-label { font-size: 0.88rem; }
-    .error-color { color: #dc2626; }
   </style>
 
   <script>

@@ -130,6 +130,7 @@
     .modal {
       background: var(--surface); border-radius: 18px; padding: 24px 20px 20px;
       width: min(92vw,350px); text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-height: 85vh; overflow-y: auto;
     }
     .modal h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
     .modal .sub { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px; }
@@ -142,17 +143,21 @@
     .diff-btn:hover  { border-color: var(--accent); }
     .diff-btn.chosen { border-color: var(--accent); background: rgba(233,69,96,0.12); }
     .diff-sub { display: block; font-size: 0.6rem; font-weight: 400; color: var(--text-muted); margin-top: 2px; }
-    .modal-actions { display: flex; gap: 10px; justify-content: center; }
+    .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
     .btn-primary {
-      background: var(--accent); color: #fff; border: none; padding: 11px 26px;
+      background: var(--accent); color: #fff; border: none; padding: 10px 24px;
       border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+      flex: 1; max-width: 120px;
     }
     .btn-primary:hover { opacity: 0.84; }
+    .btn-primary:active { transform: scale(0.98); }
     .btn-ghost {
-      background: var(--btn-bg); color: var(--text); border: none; padding: 11px 20px;
+      background: var(--btn-bg); color: var(--text); border: none; padding: 10px 24px;
       border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+      flex: 1; max-width: 120px;
     }
     .btn-ghost:hover { background: var(--btn-hover); }
+    .btn-ghost:active { background: var(--btn-hover); }
     .win-icon   { font-size: 3rem; margin-bottom: 4px; }
     .win-time   { font-size: 1.9rem; font-weight: 800; color: var(--accent); margin: 6px 0 2px; }
     .win-detail { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px; }
