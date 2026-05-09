@@ -257,6 +257,7 @@
 
   <div class="game-info">
     <span class="difficulty-label" id="diffLabel">—</span>
+    <span id="errorDisplay" style="font-size:0.78rem;font-weight:700;color:var(--error-color)"></span>
     <span class="timer" id="timer">00:00</span>
   </div>
 
@@ -559,8 +560,37 @@
     G.completedRows.clear(); G.completedCols.clear(); G.completedBoxes.clear(); G.completedNumbers.clear();
     document.getElementById('diffLabel').textContent=DIFFS[diffIdx].name;
     document.getElementById('timer').textContent='00:00';
+    document.getElementById('errorDisplay').textContent='';
+    document.querySelector('#winModal .win-icon').textContent='🎉';
+    document.querySelector('#winModal h2').textContent='Solved!';
     setPencil(false); render(); updateNumpad(); startTimer();
     const _st=getSudokuStats();_st[DIFFS[diffIdx].name].played++;saveSudokuStats(_st);
+  }
+
+  /* MISTAKE LIMITS */
+  const MISTAKE_LIMITS=[3,3,3,5,5,5]; // Easy-Hard: 3, Expert-Nightmare: 5
+  function getMaxMistakes(){return MISTAKE_LIMITS[G.diffIdx]||3;}
+  function updateErrorDisplay(){
+    const max=getMaxMistakes();
+    const el=document.getElementById('errorDisplay');
+    if(G.errors>0)el.textContent='Mistakes: '+G.errors+'/'+max;
+    else el.textContent='';
+  }
+  function checkMistakeLimit(){
+    if(G.errors>=getMaxMistakes()){
+      G.won=true;stopTimer();
+      setTimeout(()=>{
+        document.getElementById('winTime').textContent=fmt(G.timerSec);
+        document.getElementById('winDetail').textContent=DIFFS[G.diffIdx].name+' difficulty';
+        const rec=document.getElementById('winRecord');
+        rec.textContent='Too many mistakes!';rec.className='win-record';
+        document.querySelector('#winModal .win-icon').textContent='😞';
+        document.querySelector('#winModal h2').textContent='Game Over';
+        document.getElementById('winModal').classList.remove('hidden');
+      },400);
+      return true;
+    }
+    return false;
   }
 
   /* COMBO SYSTEM */
@@ -661,10 +691,9 @@
         const r=(sel/9)|0,c=sel%9;
         for(let i=0;i<81;i++){if(i===sel)continue;if((i/9|0)===r||i%9===c||box(i)===box(sel))G.board[i].notes.delete(num);}
       }
-      // Register combo on correct input (not for erased values)
-      if(num>0){registerCombo();checkCompletions(sel,num);}
-      // Track if this is an error
-      if(num>0&&hasConflict(sel,num)){breakCombo();G.errors++;}
+      // Track if this is an error, register combo only on correct input
+      if(num>0&&hasConflict(sel,num)){breakCombo();G.errors++;updateErrorDisplay();if(checkMistakeLimit())return;}
+      else if(num>0){registerCombo();checkCompletions(sel,num);}
     }
     render(); updateNumpad();
     if(num>0){const el=document.querySelectorAll('.cell')[sel];if(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}}
