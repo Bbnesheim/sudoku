@@ -82,12 +82,13 @@
   </style>
 </head>
 <body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none;"><use href="assets/icons/sprite.svg"/></svg>
   <header>
     <div class="logo">
       <span class="logo-name">KAREN'S GARDEN</span>
       <span class="logo-sub">Puzzle Hub</span>
     </div>
-    <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">☀️</button>
+    <button class="icon-btn" id="themeBtn" aria-label="Toggle theme"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-sun"/></svg></button>
   </header>
 
   <div class="tagline">Pick a puzzle, take a break 🌿</div>
@@ -96,7 +97,7 @@
     <div class="section-label">Games</div>
 
     <a href="sudoku.html" class="game-card">
-      <div class="game-icon">🧩</div>
+      <div class="game-icon"><svg width="48" height="48" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-play"/></svg></div>
       <div class="game-info">
         <div class="game-name">SUDOKU</div>
         <div class="game-desc">Fill the 9×9 grid — unique solution guaranteed</div>
@@ -106,7 +107,7 @@
     </a>
 
     <a href="wordle.html" class="game-card">
-      <div class="game-icon">🌿</div>
+      <div class="game-icon"><svg width="48" height="48" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-play"/></svg></div>
       <div class="game-info">
         <div class="game-name">WORDLE</div>
         <div class="game-desc">Guess the 5-letter word in 6 tries</div>
@@ -145,17 +146,21 @@
   }
 
   // Theme — persist via localStorage
+  function updateThemeIcon(){
+    const btn=document.getElementById('themeBtn');
+    btn.innerHTML=isDark?'<svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-moon"/></svg>':'<svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-sun"/></svg>';
+  }
   const savedTheme=localStorage.getItem('kg_theme')||'light';
   let isDark=savedTheme==='dark';
   document.documentElement.dataset.theme=isDark?'dark':'light';
-  document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+  updateThemeIcon();
   document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
 
   document.getElementById('themeBtn').addEventListener('click',()=>{
     isDark=!isDark;
     const theme=isDark?'dark':'light';
     document.documentElement.dataset.theme=theme;
-    document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+    updateThemeIcon();
     document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
     localStorage.setItem('kg_theme',theme);
   });
