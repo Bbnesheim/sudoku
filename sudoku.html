@@ -339,21 +339,43 @@
 
   <!-- SETTINGS MODAL -->
   <div class="overlay hidden" id="settingsModal">
-    <div class="modal">
-      <h2>Settings</h2>
+    <div class="modal" style="text-align:left">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="margin:0;text-align:left">Settings</h2>
+        <button id="closeSettings" style="background:none;border:none;font-size:1.4rem;cursor:pointer;padding:0;color:var(--text)">&times;</button>
+      </div>
       <div class="settings-rows">
-        <div class="s-row"><span class="s-label">Show Conflicts</span><label class="toggle"><input type="checkbox" id="cfgConflicts" checked><span class="t-slider"></span></label></div>
-        <div class="s-row"><span class="s-label">Highlight Same Numbers</span><label class="toggle"><input type="checkbox" id="cfgHighlightSame" checked><span class="t-slider"></span></label></div>
-        <div class="s-row"><span class="s-label">Auto-Remove Notes</span><label class="toggle"><input type="checkbox" id="cfgAutoNotes" checked><span class="t-slider"></span></label></div>
-        <div class="s-row" style="border-top:2px solid var(--border);border-bottom:none;margin-top:16px;padding-top:16px;">
-          <span class="s-label" id="usernameDisplay" style="cursor:text;" title="Click to edit">—</span>
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">Gameplay</label>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:0.9rem">Show Conflicts</span>
+              <label class="toggle"><input type="checkbox" id="cfgConflicts" checked><span class="t-slider"></span></label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:0.9rem">Highlight Same Numbers</span>
+              <label class="toggle"><input type="checkbox" id="cfgHighlightSame" checked><span class="t-slider"></span></label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:0.9rem">Auto-Remove Notes</span>
+              <label class="toggle"><input type="checkbox" id="cfgAutoNotes" checked><span class="t-slider"></span></label>
+            </div>
+          </div>
         </div>
-        <div class="s-row" style="border-top:2px solid var(--border);margin-top:16px;padding-top:16px;flex-direction:column;align-items:flex-start;">
-          <span class="s-label" style="margin-bottom:10px;">Danger Zone</span>
-          <button class="btn-danger" id="clearHistoryBtn" style="width:100%;">Clear History</button>
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+          <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">Username</label>
+          <span id="usernameDisplay" style="cursor:text;font-weight:700;display:block;padding:10px;background:var(--btn-bg);border-radius:8px;word-break:break-word"></span>
+          <p style="font-size:0.65rem;color:var(--text-muted);margin-top:4px">Click to edit</p>
+        </div>
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+          <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#dc2626;margin-bottom:8px">Danger Zone</label>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:0.85rem">Clear All History</span>
+            <button id="clearHistoryBtn" class="btn-danger">Clear</button>
+          </div>
+          <p style="font-size:0.65rem;color:var(--text-muted);margin-top:6px">Permanently delete all game data</p>
         </div>
       </div>
-      <div class="modal-actions"><button class="btn-primary" id="closeSettings">Done</button></div>
     </div>
   </div>
 
