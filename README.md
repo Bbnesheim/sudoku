@@ -6,8 +6,7 @@ A fully-featured Sudoku game that runs in any browser and can be installed on yo
 
 **https://bbnesheim.github.io/sudoku/**
 
-> If the link shows a 404, the repo owner needs to enable GitHub Pages once:  
-> GitHub repo → **Settings** → **Pages** → Source: **Deploy from branch** → Branch: **gh-pages** → **Save**
+> GitHub Pages should be configured to deploy from the `production` branch.
 
 ---
 
@@ -70,6 +69,15 @@ Once installed it opens full-screen with no browser chrome, just like a native a
 | `P` | Toggle pencil/notes mode |
 | `H` | Hint |
 | `Ctrl+Z` | Undo |
+
+---
+
+## Git branches
+
+- **`main`** — stable release branch
+- **`production`** — active branch used for deployment
+- Feature branches — merged into `production` when ready
+- **`gh-pages`** — legacy Pages branch; no longer the deployment source
 
 ---
 
