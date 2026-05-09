@@ -480,15 +480,51 @@
     return Math.max(cfg.min,raw);
   }
 
-  /* PERSONAL BESTS */
-  function getBest(name){return(JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}')||{})[name]??null;}
-  function setBest(name,secs){
-    const d=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');
-    if(d[name]==null||secs<d[name]){d[name]=secs;localStorage.setItem('kg_sudoku_best',JSON.stringify(d));return true;}
+  /* MIGRATION (one-time: old stats → new schema) */
+  function migrateStats(){
+    if(localStorage.getItem('_kg_migrated'))return;
+    const oldBest=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');
+    const oldStats=JSON.parse(localStorage.getItem('kg_sudoku_stats')||'{}');
+    if(Object.keys(oldBest).length>0){
+      const newBest={};
+      Object.entries(oldBest).forEach(([diff,time])=>{newBest[diff]={score:0,time:time,runId:null};});
+      localStorage.setItem('kg_sudoku_best',JSON.stringify(newBest));
+    }else{
+      localStorage.setItem('kg_sudoku_best',JSON.stringify({}));
+    }
+    if(!localStorage.getItem('kg_runs'))localStorage.setItem('kg_runs',JSON.stringify([]));
+    localStorage.setItem('_kg_migrated','1');
+  }
+  migrateStats();
+
+  /* RUN HISTORY */
+  function generateUUID(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});}
+  function getRuns(){try{return JSON.parse(localStorage.getItem('kg_runs')||'[]');}catch(e){return[];}}
+  function saveRuns(runs){if(runs.length>500)runs=runs.slice(-500);localStorage.setItem('kg_runs',JSON.stringify(runs));}
+  function getRunsForDiff(diffName){return getRuns().filter(r=>r.diff===diffName);}
+  function addRun(diffIdx,time,score,errors,hints,reveals,comboBonusPool,completionBonusPool){
+    const runs=getRuns();
+    const run={id:generateUUID(),diff:DIFFS[diffIdx].name,diffIdx:diffIdx,score:score,time:time,errors:errors,hints:hints,reveals:reveals,comboBonusPool:comboBonusPool,completionBonusPool:completionBonusPool,ts:Date.now()};
+    runs.push(run);
+    saveRuns(runs);
+    return run;
+  }
+
+  /* PERSONAL BESTS - NEW SCHEMA */
+  function getBest(name){const b=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');return b[name]??null;}
+  function updateBest(diffIdx,time,score,runId){
+    const diffName=DIFFS[diffIdx].name;
+    const best=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');
+    const existing=best[diffName];
+    if(!existing||score>existing.score||(score===existing.score&&time<existing.time)){
+      best[diffName]={score:score,time:time,runId:runId};
+      localStorage.setItem('kg_sudoku_best',JSON.stringify(best));
+      return true;
+    }
     return false;
   }
 
-  /* STATS */
+  /* STATS - OLD AGGREGATES (keep for backward compat) */
   function getSudokuStats(){
     const def={};DIFFS.forEach(d=>{def[d.name]={played:0,won:0,totalTime:0};});
     try{return Object.assign(def,JSON.parse(localStorage.getItem('kg_sudoku_stats')||'{}'));}catch(e){return def;}
@@ -689,15 +725,18 @@
     if(!G.board.every((d,i)=>!hasConflict(i,d.value)))return;
     G.won=true;stopTimer();launchConfetti();
     const diffName=DIFFS[G.diffIdx].name;
-    const isNew=setBest(diffName,G.timerSec);
+    const score=calcScore(G.diffIdx,G.timerSec,G.errors,G.hints,G.reveals,G.comboBonusPool,G.completionBonusPool);
+    const run=addRun(G.diffIdx,G.timerSec,score,G.errors,G.hints,G.reveals,G.comboBonusPool,G.completionBonusPool);
+    const isNewBest=updateBest(G.diffIdx,G.timerSec,score,run.id);
     const _st2=getSudokuStats();_st2[diffName].won++;_st2[diffName].totalTime+=G.timerSec;saveSudokuStats(_st2);
     const best=getBest(diffName);
     setTimeout(()=>{
       document.getElementById('winTime').textContent=fmt(G.timerSec);
       document.getElementById('winDetail').textContent=diffName+' difficulty';
       const rec=document.getElementById('winRecord');
-      if(isNew){rec.textContent='🏆 New Personal Best!';rec.className='win-record new-pb';}
-      else{rec.textContent='Best: '+fmt(best);rec.className='win-record';}
+      if(isNewBest){rec.textContent='🏆 New Best Score!';rec.className='win-record new-pb';}
+      else if(best){rec.textContent='Score: '+score+' pts · Best: '+best.score;rec.className='win-record';}
+      else{rec.textContent='Score: '+score+' pts';rec.className='win-record';}
       document.getElementById('winModal').classList.remove('hidden');
     },800);
   }
@@ -759,7 +798,8 @@
       const btn=document.createElement('button');
       btn.className='diff-btn'+(i===pendingDiff?' chosen':'');
       const best=getBest(d.name);
-      btn.innerHTML=`${d.name}<span class="diff-sub">${best!=null?'⏱ '+fmt(best):d.sub}</span>`;
+      const subtext=best!=null?'⏱ '+fmt(best.time)+' · '+best.score+'pts':d.sub;
+      btn.innerHTML=`${d.name}<span class="diff-sub">${subtext}</span>`;
       btn.addEventListener('click',()=>{pendingDiff=i;document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('chosen'));btn.classList.add('chosen');});
       grid.appendChild(btn);
     });
@@ -895,19 +935,74 @@
   });
 
   /* STATS MODAL */
-  function showStatsModal(){
-    const st=getSudokuStats();
+  let statsView='main',statsDiff=0;
+  function showStatsMain(){
     const best=JSON.parse(localStorage.getItem('kg_sudoku_best')||'{}');
-    let html='<table class="stats-table"><tr><th>Mode</th><th>Played</th><th>Won</th><th>Win%</th><th>Best</th></tr>';
-    DIFFS.forEach(d=>{
-      const s=st[d.name]||{played:0,won:0,totalTime:0};
+    const st=getSudokuStats();
+    let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0">';
+    DIFFS.forEach((d,i)=>{
       const b=best[d.name];
+      const s=st[d.name]||{played:0,won:0,totalTime:0};
       const pct=s.played?Math.round(s.won/s.played*100):0;
-      html+=`<tr><td>${d.name}</td><td>${s.played}</td><td>${s.won}</td><td>${s.played?pct+'%':'—'}</td><td>${b!=null?fmt(b):'—'}</td></tr>`;
+      html+=`<button class="diff-tile" data-idx="${i}" style="padding:14px;background:var(--btn-bg);border:none;border-radius:10px;cursor:pointer;text-align:left;transition:background 0.15s">`;
+      html+=`<div style="font-size:0.9rem;font-weight:700;margin-bottom:4px">${d.name}</div>`;
+      html+=`<div style="font-size:0.75rem;color:var(--text-muted);line-height:1.4">`;
+      html+=`<div>★ ${b?b.score+' pts':'—'}</div>`;
+      html+=`<div>⏱ ${b?fmt(b.time):'—'}</div>`;
+      html+=`<div>${s.played?s.won}/${s.played} · ${pct}%':'—'}</div>`;
+      html+=`</div></button>`;
     });
-    html+='</table>';
+    html+='</div>';
     if(!DIFFS.some(d=>(st[d.name]||{}).played>0))html='<p style="text-align:center;color:var(--text-muted);padding:16px 0;font-size:0.85rem">No games completed yet.</p>';
     document.getElementById('statsTableWrap').innerHTML=html;
+    document.querySelectorAll('.diff-tile').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const idx=+btn.dataset.idx;
+        statsView='detail';
+        statsDiff=idx;
+        showStatsDrill();
+      });
+      btn.addEventListener('mouseover',()=>btn.style.background='var(--btn-hover)');
+      btn.addEventListener('mouseout',()=>btn.style.background='var(--btn-bg)');
+    });
+  }
+  function showStatsDrill(){
+    const diffName=DIFFS[statsDiff].name;
+    const runs=getRunsForDiff(diffName);
+    let sortMode=localStorage.getItem('_kg_stats_sort_'+statsDiff)||'score';
+    let sorted=[...runs];
+    if(sortMode==='score')sorted.sort((a,b)=>b.score-a.score);
+    else sorted.sort((a,b)=>a.time-b.time);
+    const topRuns=sorted.slice(0,10);
+    let html=`<div style="text-align:center;margin:0 0 14px">`;
+    html+=`<h3 style="font-size:1rem;margin-bottom:8px">${diffName} — Top Runs</h3>`;
+    html+=`<div style="display:flex;gap:8px;justify-content:center">`;
+    html+=`<button class="sort-btn" data-sort="score" style="padding:6px 12px;font-size:0.75rem;border:1px solid var(--border);border-radius:6px;background:${sortMode==='score'?'var(--accent)':'var(--btn-bg)'};color:${sortMode==='score'?'#fff':'var(--text)'};cursor:pointer;transition:all 0.15s;font-weight:700">Score</button>`;
+    html+=`<button class="sort-btn" data-sort="time" style="padding:6px 12px;font-size:0.75rem;border:1px solid var(--border);border-radius:6px;background:${sortMode==='time'?'var(--accent)':'var(--btn-bg)'};color:${sortMode==='time'?'#fff':'var(--text)'};cursor:pointer;transition:all 0.15s;font-weight:700">Time</button>`;
+    html+=`</div></div>`;
+    if(topRuns.length===0){
+      html+=`<p style="text-align:center;color:var(--text-muted);padding:16px 0;font-size:0.85rem">No runs yet.</p>`;
+    }else{
+      html+=`<table class="stats-table" style="margin:12px 0">`;
+      html+=`<tr><th style="text-align:left">#</th><th>TIME</th><th>SCORE</th><th>ERRORS</th></tr>`;
+      topRuns.forEach((r,idx)=>{
+        const medal=['🥇','🥈','🥉'][idx]||'•';
+        html+=`<tr><td style="text-align:left;font-weight:700;padding:7px 6px">${medal}</td><td>${fmt(r.time)}</td><td>${r.score}</td><td>${r.errors}</td></tr>`;
+      });
+      html+=`</table>`;
+    }
+    document.getElementById('statsTableWrap').innerHTML=html;
+    document.querySelectorAll('.sort-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const sort=btn.dataset.sort;
+        localStorage.setItem('_kg_stats_sort_'+statsDiff,sort);
+        showStatsDrill();
+      });
+    });
+  }
+  function showStatsModal(){
+    statsView='main';
+    showStatsMain();
     document.getElementById('statsModal').classList.remove('hidden');
   }
 
