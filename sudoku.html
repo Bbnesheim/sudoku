@@ -879,10 +879,14 @@
 
   /* SETTINGS */
   document.getElementById('settingsBtn').addEventListener('click',()=>{
+    if(!G_paused&&G.solution)togglePause();
     displayUsername();
     document.getElementById('settingsModal').classList.remove('hidden');
   });
-  document.getElementById('closeSettings').addEventListener('click',()=>document.getElementById('settingsModal').classList.add('hidden'));
+  document.getElementById('closeSettings').addEventListener('click',()=>{
+    document.getElementById('settingsModal').classList.add('hidden');
+    if(G_paused&&!G.won)togglePause();
+  });
   document.getElementById('cfgConflicts').addEventListener('change',e=>{G.cfg.conflicts=e.target.checked;render();});
   document.getElementById('cfgHighlightSame').addEventListener('change',e=>{G.cfg.highlightSame=e.target.checked;render();});
   document.getElementById('cfgAutoNotes').addEventListener('change',e=>{G.cfg.autoNotes=e.target.checked;});
@@ -1048,7 +1052,10 @@
     document.getElementById('newModal').classList.remove('hidden');
   });
   ['newModal','settingsModal'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{
-    if(e.target.id===id&&(id!=='newModal'||G.solution))document.getElementById(id).classList.add('hidden');
+    if(e.target.id===id&&(id!=='newModal'||G.solution)){
+      document.getElementById(id).classList.add('hidden');
+      if(id==='settingsModal'&&G_paused&&!G.won)togglePause();
+    }
   }));
   document.getElementById('undoBtn').addEventListener('click',undo);
   document.getElementById('eraseCtrl').addEventListener('click',erase);
@@ -1065,12 +1072,34 @@
   });
 
   /* HELP & STATS */
-  document.getElementById('helpBtn').addEventListener('click',()=>document.getElementById('helpModal').classList.remove('hidden'));
-  document.getElementById('closeHelpModal').addEventListener('click',()=>document.getElementById('helpModal').classList.add('hidden'));
-  document.getElementById('helpModal').addEventListener('click',e=>{if(e.target.id==='helpModal')document.getElementById('helpModal').classList.add('hidden');});
-  document.getElementById('statsBtn').addEventListener('click',showStatsModal);
-  document.getElementById('closeStatsModal').addEventListener('click',()=>document.getElementById('statsModal').classList.add('hidden'));
-  document.getElementById('statsModal').addEventListener('click',e=>{if(e.target.id==='statsModal')document.getElementById('statsModal').classList.add('hidden');});
+  document.getElementById('helpBtn').addEventListener('click',()=>{
+    if(!G_paused&&G.solution)togglePause();
+    document.getElementById('helpModal').classList.remove('hidden');
+  });
+  document.getElementById('closeHelpModal').addEventListener('click',()=>{
+    document.getElementById('helpModal').classList.add('hidden');
+    if(G_paused&&!G.won)togglePause();
+  });
+  document.getElementById('helpModal').addEventListener('click',e=>{
+    if(e.target.id==='helpModal'){
+      document.getElementById('helpModal').classList.add('hidden');
+      if(G_paused&&!G.won)togglePause();
+    }
+  });
+  document.getElementById('statsBtn').addEventListener('click',()=>{
+    if(!G_paused&&G.solution)togglePause();
+    showStatsModal();
+  });
+  document.getElementById('closeStatsModal').addEventListener('click',()=>{
+    document.getElementById('statsModal').classList.add('hidden');
+    if(G_paused&&!G.won)togglePause();
+  });
+  document.getElementById('statsModal').addEventListener('click',e=>{
+    if(e.target.id==='statsModal'){
+      document.getElementById('statsModal').classList.add('hidden');
+      if(G_paused&&!G.won)togglePause();
+    }
+  });
 
   /* INIT */
   buildBoard();buildNumpad();
