@@ -295,7 +295,7 @@
       <p class="sub">Choose difficulty</p>
       <div class="diff-grid" id="diffGrid"></div>
       <div class="modal-actions">
-        <button class="btn-ghost" id="cancelNew">Cancel</button>
+        <button class="btn-ghost" id="backHome">Back to Home</button>
         <button class="btn-primary" id="startNew">Start</button>
       </div>
     </div>
@@ -1034,12 +1034,11 @@
   document.getElementById('newBtn').addEventListener('click',()=>{
     if(G_paused)togglePause();
     pendingDiff=G.diffIdx;buildDiffGrid();
-    document.getElementById('cancelNew').style.display='';
+    document.getElementById('backHome').style.display='';
     document.getElementById('newModal').classList.remove('hidden');
   });
-  document.getElementById('cancelNew').addEventListener('click',()=>{
-    if(!G.solution)return;
-    document.getElementById('newModal').classList.add('hidden');
+  document.getElementById('backHome').addEventListener('click',()=>{
+    window.location.href='index.html';
   });
   document.getElementById('startNew').addEventListener('click',()=>{
     document.getElementById('newModal').classList.add('hidden');
