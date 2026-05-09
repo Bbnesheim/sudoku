@@ -236,15 +236,16 @@
   </style>
 </head>
 <body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none;"><use href="assets/icons/sprite.svg"/></svg>
   <header class="header">
-    <a href="index.html" class="icon-btn" aria-label="Home">🏡</a>
+    <a href="index.html" class="icon-btn" aria-label="Home"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-home"/></svg></a>
     <h1>SUDOKU</h1>
     <div class="header-right">
-      <button class="icon-btn" id="helpBtn" aria-label="How to Play">❓</button>
-      <button class="icon-btn" id="statsBtn" aria-label="Statistics">📊</button>
-      <button class="icon-btn" id="pauseBtn" aria-label="Pause">⏸️</button>
-      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">☀️</button>
-      <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
+      <button class="icon-btn" id="helpBtn" aria-label="How to Play"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-help"/></svg></button>
+      <button class="icon-btn" id="statsBtn" aria-label="Statistics"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-chart"/></svg></button>
+      <button class="icon-btn" id="pauseBtn" aria-label="Pause"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-pause"/></svg></button>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-sun"/></svg></button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-settings"/></svg></button>
     </div>
   </header>
 
@@ -258,16 +259,16 @@
   </div>
 
   <div class="controls">
-    <button class="ctrl-btn" id="newBtn"><span class="ctrl-icon">🎮</span>New</button>
-    <button class="ctrl-btn" id="undoBtn"><span class="ctrl-icon">↩️</span>Undo</button>
-    <button class="ctrl-btn" id="eraseCtrl"><span class="ctrl-icon">⌫</span>Erase</button>
-    <button class="ctrl-btn" id="pencilBtn"><span class="ctrl-icon">✏️</span>Notes</button>
+    <button class="ctrl-btn" id="newBtn"><svg width="16" height="16" viewBox="0 0 24 24" class="ctrl-icon"><use href="assets/icons/sprite.svg#icon-refresh"/></svg>New</button>
+    <button class="ctrl-btn" id="undoBtn"><svg width="16" height="16" viewBox="0 0 24 24" class="ctrl-icon"><use href="assets/icons/sprite.svg#icon-undo"/></svg>Undo</button>
+    <button class="ctrl-btn" id="eraseCtrl"><svg width="16" height="16" viewBox="0 0 24 24" class="ctrl-icon"><use href="assets/icons/sprite.svg#icon-erase"/></svg>Erase</button>
+    <button class="ctrl-btn" id="pencilBtn"><svg width="16" height="16" viewBox="0 0 24 24" class="ctrl-icon"><use href="assets/icons/sprite.svg#icon-pencil"/></svg>Notes</button>
     <div class="hint-wrap">
-      <button class="ctrl-btn" id="hintBtn"><span class="ctrl-icon">💡</span>Hint</button>
+      <button class="ctrl-btn" id="hintBtn"><svg width="16" height="16" viewBox="0 0 24 24" class="ctrl-icon"><use href="assets/icons/sprite.svg#icon-lightbulb"/></svg>Hint</button>
       <div class="hint-menu hidden" id="hintMenu">
-        <button class="hint-menu-item" id="hintRandom">💡 Hint</button>
-        <button class="hint-menu-item" id="hintReveal">👁 Reveal Cell</button>
-        <button class="hint-menu-item" id="hintCheck">✓ Check Cell</button>
+        <button class="hint-menu-item" id="hintRandom"><svg width="14" height="14" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-lightbulb"/></svg> Hint</button>
+        <button class="hint-menu-item" id="hintReveal"><svg width="14" height="14" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-eye"/></svg> Reveal Cell</button>
+        <button class="hint-menu-item" id="hintCheck"><svg width="14" height="14" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-help"/></svg> Check Cell</button>
       </div>
     </div>
   </div>
@@ -772,15 +773,19 @@
   });
 
   /* THEME */
+  function updateThemeIcon(){
+    const btn=document.getElementById('themeBtn');
+    btn.innerHTML=isDark?'<svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-moon"/></svg>':'<svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-sun"/></svg>';
+  }
   const _th=localStorage.getItem('kg_theme')||'light';
   let isDark=_th==='dark';
   document.documentElement.dataset.theme=_th;
-  document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+  updateThemeIcon();
   document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
   document.getElementById('themeBtn').addEventListener('click',()=>{
     isDark=!isDark;const t=isDark?'dark':'light';
     document.documentElement.dataset.theme=t;localStorage.setItem('kg_theme',t);
-    document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+    updateThemeIcon();
     document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
   });
 
