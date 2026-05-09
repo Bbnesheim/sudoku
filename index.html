@@ -34,6 +34,7 @@
       display: flex; justify-content: space-between; align-items: center;
       padding: 20px 20px 0;
     }
+    .header-right { display: flex; gap: 6px; }
     .logo { display: flex; flex-direction: column; }
     .logo-name  { font-size: 1.45rem; font-weight: 900; letter-spacing: 3px; color: var(--text); line-height: 1; }
     .logo-sub   { font-size: 0.62rem; letter-spacing: 3px; color: var(--accent); font-weight: 700; text-transform: uppercase; margin-top: 3px; }
@@ -85,10 +86,14 @@
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none;"><use href="assets/icons/sprite.svg"/></svg>
   <header>
     <div class="logo">
-      <span class="logo-name">KAREN'S GARDEN</span>
+      <span class="logo-name">THE GARDEN</span>
       <span class="logo-sub">Puzzle Hub</span>
     </div>
-    <button class="icon-btn" id="themeBtn" aria-label="Toggle theme"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-sun"/></svg></button>
+    <div class="header-right">
+      <button class="icon-btn" id="leaderboardBtn" aria-label="Leaderboard"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-trophy"/></svg></button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-settings"/></svg></button>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-sun"/></svg></button>
+    </div>
   </header>
 
   <div class="tagline">Pick a puzzle, take a break 🌿</div>
