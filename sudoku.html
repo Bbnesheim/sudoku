@@ -337,13 +337,8 @@
         <div class="s-row"><span class="s-label">Show Conflicts</span><label class="toggle"><input type="checkbox" id="cfgConflicts" checked><span class="t-slider"></span></label></div>
         <div class="s-row"><span class="s-label">Highlight Same Numbers</span><label class="toggle"><input type="checkbox" id="cfgHighlightSame" checked><span class="t-slider"></span></label></div>
         <div class="s-row"><span class="s-label">Auto-Remove Notes</span><label class="toggle"><input type="checkbox" id="cfgAutoNotes" checked><span class="t-slider"></span></label></div>
-        <div class="s-row" style="border-top:2px solid var(--border);margin-top:16px;padding-top:16px;">
-          <span class="s-label" id="usernameDisplay">—</span>
-          <button class="btn-ghost" id="editUsernameBtn" style="padding:6px 12px;font-size:0.8rem;">Edit</button>
-        </div>
-        <div class="s-row" id="usernameEditRow" style="display:none;">
-          <input type="text" id="usernameInput" placeholder="New name" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;background:var(--surface);color:var(--text);">
-          <button class="btn-primary" id="saveUsernameBtn" style="margin-left:8px;padding:6px 12px;font-size:0.8rem;">Save</button>
+        <div class="s-row" style="border-top:2px solid var(--border);border-bottom:none;margin-top:16px;padding-top:16px;">
+          <span class="s-label" id="usernameDisplay" style="cursor:text;" title="Click to edit">—</span>
         </div>
         <div class="s-row" style="border-top:2px solid var(--border);margin-top:16px;padding-top:16px;flex-direction:column;align-items:flex-start;">
           <span class="s-label" style="margin-bottom:10px;">Danger Zone</span>
@@ -375,12 +370,26 @@
       </div>
       <div class="help-section">
         <h3>Controls</h3>
-        <p>💡 <b>Hint</b> — highlights a cell whose pencil marks contain the correct answer</p>
-        <p>👁 <b>Reveal Cell</b> — fills a random empty cell with the correct number</p>
-        <p>✓ <b>Check Cell</b> — flashes green if correct, red if wrong</p>
-        <p>✏️ <b>Notes</b> — toggle pencil mode to write candidate numbers in cells</p>
-        <p>⌫ <b>Erase (toolbar)</b> — clears a cell's value AND all pencil marks</p>
-        <p>⌫ <b>Backspace (numpad)</b> — in notes mode clears pencil marks only; in normal mode clears value</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0;"><use href="assets/icons/sprite.svg#icon-lightbulb"/></svg>
+          <div><b>Hint</b> — highlights a cell whose pencil marks contain the correct answer</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0;"><use href="assets/icons/sprite.svg#icon-eye"/></svg>
+          <div><b>Reveal Cell</b> — fills a random empty cell with the correct number</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0;"><use href="assets/icons/sprite.svg#icon-pencil"/></svg>
+          <div><b>Notes</b> — toggle pencil mode to write candidate numbers in cells</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0;"><use href="assets/icons/sprite.svg#icon-erase"/></svg>
+          <div><b>Erase (toolbar)</b> — clears a cell's value AND all pencil marks</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0;"><use href="assets/icons/sprite.svg#icon-erase"/></svg>
+          <div><b>Backspace (numpad)</b> — in notes mode clears pencil marks only; in normal mode clears value</div>
+        </div>
       </div>
       <div class="help-section">
         <h3>Keyboard Shortcuts</h3>
@@ -814,16 +823,37 @@
   document.getElementById('cfgAutoNotes').addEventListener('change',e=>{G.cfg.autoNotes=e.target.checked;});
   
   /* USERNAME EDIT FLOW */
-  document.getElementById('editUsernameBtn').addEventListener('click',()=>{
+  document.getElementById('usernameDisplay').addEventListener('click',()=>{
+    const span=document.getElementById('usernameDisplay');
     const user=getUser();
-    document.getElementById('usernameInput').value=user?.username||'';
-    document.getElementById('usernameEditRow').style.display='flex';
-  });
-  document.getElementById('saveUsernameBtn').addEventListener('click',()=>{
-    const newName=document.getElementById('usernameInput').value.trim();
-    if(newName.length===0){alert('Please enter a name');return;}
-    const user=getUser();
-    if(user){user.username=newName;setUser(user);displayUsername();document.getElementById('usernameEditRow').style.display='none';}
+    const currentName=user?.username||'Guest';
+    if(span.textContent===currentName){
+      const input=document.createElement('input');
+      input.type='text';
+      input.value=currentName;
+      input.style.cssText='padding:4px;border:1px solid var(--border);border-radius:4px;font-size:0.88rem;background:var(--surface);color:var(--text);flex:1;';
+      span.replaceWith(input);
+      input.focus();
+      input.select();
+      function saveUsername(){
+        const newName=input.value.trim();
+        const newSpan=document.createElement('span');
+        newSpan.id='usernameDisplay';
+        newSpan.style.cssText='cursor:text;';
+        newSpan.title='Click to edit';
+        if(newName&&user){
+          user.username=newName;
+          setUser(user);
+          newSpan.textContent=newName;
+        }else{
+          newSpan.textContent=currentName;
+        }
+        input.replaceWith(newSpan);
+        newSpan.addEventListener('click',arguments.callee.caller);
+      }
+      input.addEventListener('blur',saveUsername);
+      input.addEventListener('keypress',e=>{if(e.key==='Enter')saveUsername();});
+    }
   });
   
   /* CLEAR HISTORY FLOW */
