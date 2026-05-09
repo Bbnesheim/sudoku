@@ -315,38 +315,44 @@
   document.getElementById('closeSettings').addEventListener('click',()=>document.getElementById('settingsModal').classList.add('hidden'));
   document.getElementById('settingsModal').addEventListener('click',e=>{if(e.target.id==='settingsModal')document.getElementById('settingsModal').classList.add('hidden');});
 
-  document.getElementById('usernameDisplay').addEventListener('click',()=>{
+  function attachUsernameClickHandler(){
     const span=document.getElementById('usernameDisplay');
-    const user=getUser();
-    const currentName=user?.username||'Guest';
-    if(span.textContent===currentName){
-      const input=document.createElement('input');
-      input.type='text';
-      input.value=currentName;
-      input.style.cssText='padding:4px;border:1px solid var(--border);border-radius:4px;font-size:0.88rem;background:var(--surface);color:var(--text);flex:1;';
-      span.replaceWith(input);
-      input.focus();
-      input.select();
-      function saveUsername(){
-        const newName=input.value.trim();
-        const newSpan=document.createElement('span');
-        newSpan.id='usernameDisplay';
-        newSpan.style.cssText='cursor:text;font-weight:700';
-        newSpan.title='Click to edit';
-        if(newName&&user){
-          user.username=newName;
-          setUser(user);
-          newSpan.textContent=newName;
-        }else{
-          newSpan.textContent=currentName;
+    if(!span)return;
+    span.addEventListener('click',()=>{
+      const user=getUser();
+      const currentName=user?.username||'Guest';
+      const spanEl=document.getElementById('usernameDisplay');
+      if(spanEl.textContent===currentName){
+        spanEl.removeEventListener('click',arguments.callee);
+        const input=document.createElement('input');
+        input.type='text';
+        input.value=currentName;
+        input.style.cssText='padding:8px;border:1.5px solid var(--accent);border-radius:6px;font-size:0.88rem;background:var(--surface);color:var(--text);width:100%;box-sizing:border-box;';
+        spanEl.replaceWith(input);
+        input.focus();
+        input.select();
+        function saveUsername(){
+          const newName=input.value.trim();
+          const newSpan=document.createElement('span');
+          newSpan.id='usernameDisplay';
+          newSpan.style.cssText='cursor:text;font-weight:700;display:block;padding:10px;background:var(--btn-bg);border-radius:8px;word-break:break-word';
+          newSpan.title='Click to edit';
+          if(newName&&user){
+            user.username=newName;
+            setUser(user);
+            newSpan.textContent=newName;
+          }else{
+            newSpan.textContent=currentName;
+          }
+          input.replaceWith(newSpan);
+          attachUsernameClickHandler();
         }
-        input.replaceWith(newSpan);
-        newSpan.addEventListener('click',arguments.callee.caller);
+        input.addEventListener('blur',saveUsername);
+        input.addEventListener('keypress',e=>{if(e.key==='Enter'){e.preventDefault();saveUsername();}});
       }
-      input.addEventListener('blur',saveUsername);
-      input.addEventListener('keypress',e=>{if(e.key==='Enter')saveUsername();});
-    }
-  });
+    });
+  }
+  attachUsernameClickHandler();
 
   document.getElementById('clearHistoryBtn').addEventListener('click',()=>{
     showConfirmModal('Clear History?','This will delete all game runs, stats, and records. This cannot be undone.',()=>{
