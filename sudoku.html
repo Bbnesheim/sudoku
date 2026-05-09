@@ -1059,7 +1059,13 @@
   buildBoard();buildNumpad();
   pendingDiff=1;buildDiffGrid();
   document.getElementById('cancelNew').style.display='none';
-  document.getElementById('newModal').classList.remove('hidden');
+  // Show welcome modal if no user exists
+  const user=initializeUser();
+  if(!user){
+    document.getElementById('welcomeModal').classList.remove('hidden');
+  }else{
+    document.getElementById('newModal').classList.remove('hidden');
+  }
   </script>
 </body>
 </html>
