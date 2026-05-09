@@ -169,16 +169,16 @@
 </head>
 <body>
   <header>
-    <a href="index.html" class="icon-btn" aria-label="Home">🏡</a>
+    <a href="index.html" class="icon-btn" aria-label="Home" title="Home"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-home"/></svg></a>
     <div class="header-center">
       <h1>WORDLE</h1>
       <span class="game-mode">Unlimited</span>
     </div>
     <div class="header-right">
-      <button class="icon-btn" id="newGameBtn" aria-label="New Game" title="New Game">↺</button>
-      <button class="icon-btn" id="helpBtn" aria-label="How to Play">❓</button>
-      <button class="icon-btn" id="statsBtn" aria-label="Stats">📊</button>
-      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">☀️</button>
+      <button class="icon-btn" id="newGameBtn" aria-label="New Game" title="New Game"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-refresh"/></svg></button>
+      <button class="icon-btn" id="helpBtn" aria-label="How to Play"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-help"/></svg></button>
+      <button class="icon-btn" id="statsBtn" aria-label="Stats"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-stats"/></svg></button>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme"><svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-sun"/></svg></button>
     </div>
   </header>
 
@@ -499,12 +499,14 @@
   const _th=localStorage.getItem('kg_theme')||'light';
   let isDark=_th==='dark';
   document.documentElement.dataset.theme=_th;
-  document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+  const themeSvg=document.querySelector('#themeBtn svg use');
+  if(themeSvg)themeSvg.setAttribute('href',isDark?'assets/icons/sprite.svg#icon-moon':'assets/icons/sprite.svg#icon-sun');
   document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
   document.getElementById('themeBtn').addEventListener('click',()=>{
     isDark=!isDark;const t=isDark?'dark':'light';
     document.documentElement.dataset.theme=t;localStorage.setItem('kg_theme',t);
-    document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+    const themeSvg=document.querySelector('#themeBtn svg use');
+    if(themeSvg)themeSvg.setAttribute('href',isDark?'assets/icons/sprite.svg#icon-moon':'assets/icons/sprite.svg#icon-sun');
     document.getElementById('themeColorMeta').content=isDark?'#1a1a2e':'#ffffff';
   });
 
