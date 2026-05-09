@@ -362,19 +362,6 @@
             </div>
           </div>
         </div>
-        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
-          <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">Username</label>
-          <span id="usernameDisplay" style="cursor:text;font-weight:700;display:block;padding:10px;background:var(--btn-bg);border-radius:8px;word-break:break-word"></span>
-          <p style="font-size:0.65rem;color:var(--text-muted);margin-top:4px">Click to edit</p>
-        </div>
-        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
-          <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#dc2626;margin-bottom:8px">Danger Zone</label>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:0.85rem">Clear All History</span>
-            <button id="clearHistoryBtn" class="btn-danger">Clear</button>
-          </div>
-          <p style="font-size:0.65rem;color:var(--text-muted);margin-top:6px">Permanently delete all game data</p>
-        </div>
       </div>
     </div>
   </div>
@@ -902,7 +889,6 @@
   /* SETTINGS */
   document.getElementById('settingsBtn').addEventListener('click',()=>{
     if(!G_paused&&G.solution)togglePause();
-    displayUsername();
     document.getElementById('settingsModal').classList.remove('hidden');
   });
   document.getElementById('closeSettings').addEventListener('click',()=>{
@@ -913,62 +899,6 @@
   document.getElementById('cfgHighlightSame').addEventListener('change',e=>{G.cfg.highlightSame=e.target.checked;render();});
   document.getElementById('cfgAutoNotes').addEventListener('change',e=>{G.cfg.autoNotes=e.target.checked;});
   
-  /* USERNAME EDIT FLOW */
-  document.getElementById('usernameDisplay').addEventListener('click',()=>{
-    const span=document.getElementById('usernameDisplay');
-    const user=getUser();
-    const currentName=user?.username||'Guest';
-    if(span.textContent===currentName){
-      const input=document.createElement('input');
-      input.type='text';
-      input.value=currentName;
-      input.style.cssText='padding:4px;border:1px solid var(--border);border-radius:4px;font-size:0.88rem;background:var(--surface);color:var(--text);flex:1;';
-      span.replaceWith(input);
-      input.focus();
-      input.select();
-      function saveUsername(){
-        const newName=input.value.trim();
-        const newSpan=document.createElement('span');
-        newSpan.id='usernameDisplay';
-        newSpan.style.cssText='cursor:text;';
-        newSpan.title='Click to edit';
-        if(newName&&user){
-          user.username=newName;
-          setUser(user);
-          newSpan.textContent=newName;
-        }else{
-          newSpan.textContent=currentName;
-        }
-        input.replaceWith(newSpan);
-        newSpan.addEventListener('click',arguments.callee.caller);
-      }
-      input.addEventListener('blur',saveUsername);
-      input.addEventListener('keypress',e=>{if(e.key==='Enter')saveUsername();});
-    }
-  });
-  
-  /* CLEAR HISTORY FLOW */
-  function showConfirmModal(title,msg,onConfirm){
-    document.getElementById('confirmTitle').textContent=title;
-    document.getElementById('confirmMsg').textContent=msg;
-    document.getElementById('confirmModal').classList.remove('hidden');
-    document.getElementById('confirmOk').onclick=()=>{
-      document.getElementById('confirmModal').classList.add('hidden');
-      onConfirm();
-    };
-    document.getElementById('confirmCancel').onclick=()=>{
-      document.getElementById('confirmModal').classList.add('hidden');
-    };
-  }
-  document.getElementById('clearHistoryBtn').addEventListener('click',()=>{
-    showConfirmModal('Clear History?','This will delete all game runs, stats, and records. This cannot be undone.',()=>{
-      localStorage.removeItem('kg_runs');
-      localStorage.removeItem('kg_best');
-      localStorage.removeItem('kg_sudoku_stats');
-      localStorage.removeItem('kg_sudoku_best');
-      showToast('History cleared!');
-    });
-  });
   
   /* WELCOME MODAL */
   document.getElementById('welcomeSubmit').addEventListener('click',()=>{
