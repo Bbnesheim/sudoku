@@ -1047,7 +1047,6 @@
   document.getElementById('winNewGame').addEventListener('click',()=>{
     document.getElementById('winModal').classList.add('hidden');
     pendingDiff=G.diffIdx;buildDiffGrid();
-    document.getElementById('cancelNew').style.display='';
     document.getElementById('newModal').classList.remove('hidden');
   });
   ['newModal','settingsModal'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{
@@ -1103,7 +1102,6 @@
   /* INIT */
   buildBoard();buildNumpad();
   pendingDiff=1;buildDiffGrid();
-  document.getElementById('cancelNew').style.display='none';
   // Show welcome modal if no user exists
   const user=initializeUser();
   if(!user){
