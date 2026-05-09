@@ -210,9 +210,10 @@
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,0.82);
       align-items: center; justify-content: center;
-      flex-direction: column; gap: 10px; z-index: 98; cursor: pointer;
+      flex-direction: column; gap: 16px; z-index: 98; cursor: pointer;
     }
     body.paused .pause-veil { display: flex; }
+    .pause-veil-icon { color: #fff; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; }
     .pause-veil-label { color: #fff; font-size: 1.8rem; font-weight: 800; letter-spacing: 6px; }
     .pause-veil-hint  { color: rgba(255,255,255,0.65); font-size: 0.8rem; letter-spacing: 1px; }
     /* Stats table */
@@ -281,6 +282,7 @@
   <div class="numpad" id="numpad"></div>
 
   <div class="pause-veil" id="pauseVeil">
+    <svg class="pause-veil-icon" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-play"/></svg>
     <div class="pause-veil-label">PAUSED</div>
     <div class="pause-veil-hint">TAP TO RESUME</div>
   </div>
@@ -545,7 +547,8 @@
     if(G.won||!G.solution)return;
     G_paused=!G_paused;
     document.body.classList.toggle('paused',G_paused);
-    document.getElementById('pauseBtn').textContent=G_paused?'▶️':'⏸️';
+    const pauseBtn=document.getElementById('pauseBtn');
+    pauseBtn.innerHTML=G_paused?'<svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-play"/></svg>':'<svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-pause"/></svg>';
     if(G_paused)stopTimer(); else startTimer();
   }
 
@@ -558,7 +561,7 @@
   /* START GAME */
   function startGame(diffIdx){
     G_paused=false; document.body.classList.remove('paused');
-    document.getElementById('pauseBtn').textContent='⏸️';
+    document.getElementById('pauseBtn').innerHTML='<svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-pause"/></svg>';
     stopTimer();
     const{arr,solution}=generatePuzzle(diffIdx);
     G.board=arr.map(v=>({value:v,clue:v!==0,notes:new Set()}));
