@@ -275,7 +275,6 @@
       <div class="hint-menu hidden" id="hintMenu">
         <button class="hint-menu-item" id="hintRandom"><svg width="14" height="14" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-lightbulb"/></svg> Hint</button>
         <button class="hint-menu-item" id="hintReveal"><svg width="14" height="14" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-eye"/></svg> Reveal Cell</button>
-        <button class="hint-menu-item" id="hintCheck"><svg width="14" height="14" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-help"/></svg> Check Cell</button>
       </div>
     </div>
   </div>
@@ -724,7 +723,9 @@
   function doHint(){
     closeHintMenu();if(!G.solution||G.won)return;
     G.hints++;
+    // First priority: cells with a note that matches the correct answer
     const noteMatch=G.board.reduce((a,d,i)=>(!d.clue&&d.value===0&&d.notes.has(+G.solution[i])?[...a,i]:a),[]);
+    // Second priority: empty cells (likely to have possible matches)
     const empty=noteMatch.length?noteMatch:G.board.reduce((a,d,i)=>(!d.clue&&d.value===0?[...a,i]:a),[]);
     if(!empty.length)return;
     const t=empty[Math.floor(Math.random()*empty.length)];
@@ -739,13 +740,6 @@
     const t=empty[Math.floor(Math.random()*empty.length)];
     snapshot();G.board[t].value=+G.solution[t];G.board[t].clue=true;G.board[t].notes.clear();
     G.selected=t;render();updateNumpad();checkWin();
-  }
-  function checkCell(){
-    closeHintMenu();const t=G.selected;
-    if(t<0||G.board[t].clue||G.board[t].value===0||G.won)return;
-    const ok=+G.solution[t]===G.board[t].value;
-    const el=document.querySelectorAll('.cell')[t];
-    if(el){el.classList.add(ok?'check-ok':'check-err');setTimeout(()=>el.classList.remove('check-ok','check-err'),550);}
   }
 
   /* WIN */
@@ -1015,7 +1009,6 @@
   document.getElementById('hintBtn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('hintMenu').classList.toggle('hidden');});
   document.getElementById('hintRandom').addEventListener('click',doHint);
   document.getElementById('hintReveal').addEventListener('click',revealCell);
-  document.getElementById('hintCheck').addEventListener('click',checkCell);
   document.addEventListener('pointerdown',e=>{
     const menu=document.getElementById('hintMenu');
     if(!menu.classList.contains('hidden')&&!document.getElementById('hintBtn').contains(e.target)&&!menu.contains(e.target))closeHintMenu();
