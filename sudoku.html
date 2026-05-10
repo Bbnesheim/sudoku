@@ -59,6 +59,7 @@
     }
     .difficulty-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); }
     .timer { font-size: 0.95rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+    .score-display { font-size: 0.95rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
     .board-wrap {
       width: 100%; max-width: 520px; padding: 4px 8px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
@@ -258,6 +259,7 @@
   <div class="game-info">
     <span class="difficulty-label" id="diffLabel">—</span>
     <span id="errorDisplay" style="font-size:0.78rem;font-weight:700;color:var(--error-color)"></span>
+    <span class="score-display" id="scoreDisplay">0</span>
     <span class="timer" id="timer">00:00</span>
   </div>
 
@@ -568,6 +570,7 @@
     G.completedRows.clear(); G.completedCols.clear(); G.completedBoxes.clear(); G.completedNumbers.clear();
     document.getElementById('diffLabel').textContent=DIFFS[diffIdx].name;
     document.getElementById('timer').textContent='00:00';
+    document.getElementById('scoreDisplay').textContent='0';
     document.getElementById('errorDisplay').textContent='';
     document.querySelector('#winModal .win-icon').textContent='🎉';
     document.querySelector('#winModal h2').textContent='Solved!';
@@ -614,11 +617,12 @@
       const msg=`Combo ×${G.combo}! +${bonus}`;
       showToast(msg);
     }
+    updateScoreDisplay();
   }
   function breakCombo(){G.combo=0;}
   function showToast(msg){
     const t=document.createElement('div');
-    t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:8px 16px;border-radius:20px;font-size:0.85rem;font-weight:700;z-index:300;pointer-events:none;animation:fadeInOut 2s ease';
+    t.style.cssText='position:fixed;top:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:8px 16px;border-radius:20px;font-size:0.85rem;font-weight:700;z-index:300;pointer-events:none;animation:fadeInOut 2s ease';
     t.textContent=msg;
     document.body.appendChild(t);
     setTimeout(()=>t.remove(),2000);
@@ -647,10 +651,10 @@
   }
   function checkCompletions(cellIndex,value){
     const row=(cellIndex/9)|0,col=cellIndex%9,boxIdx=box(cellIndex);
-    if(isRowComplete(row)&&!G.completedRows.has(row)){G.completedRows.add(row);G.completionBonusPool+=500;showToast('Row complete! +500');}
-    if(isColComplete(col)&&!G.completedCols.has(col)){G.completedCols.add(col);G.completionBonusPool+=500;showToast('Column complete! +500');}
-    if(isBoxComplete(boxIdx)&&!G.completedBoxes.has(boxIdx)){G.completedBoxes.add(boxIdx);G.completionBonusPool+=750;showToast('Box complete! +750');}
-    if(isNumberComplete(value)&&!G.completedNumbers.has(value)){G.completedNumbers.add(value);G.completionBonusPool+=1000;showToast(`All ${value}s placed! +1000`);}
+    if(isRowComplete(row)&&!G.completedRows.has(row)){G.completedRows.add(row);G.completionBonusPool+=500;showToast('Row complete! +500');updateScoreDisplay();}
+    if(isColComplete(col)&&!G.completedCols.has(col)){G.completedCols.add(col);G.completionBonusPool+=500;showToast('Column complete! +500');updateScoreDisplay();}
+    if(isBoxComplete(boxIdx)&&!G.completedBoxes.has(boxIdx)){G.completedBoxes.add(boxIdx);G.completionBonusPool+=750;showToast('Box complete! +750');updateScoreDisplay();}
+    if(isNumberComplete(value)&&!G.completedNumbers.has(value)){G.completedNumbers.add(value);G.completionBonusPool+=1000;showToast(`All ${value}s placed! +1000`);updateScoreDisplay();}
   }
 
   /* RENDER */
@@ -687,6 +691,10 @@
 
   /* INPUT */
   function selectCell(i){if(G.won||G_paused)return;G.selected=i;render();}
+  function updateScoreDisplay(){
+    const tempScore=calcScore(G.diffIdx,G.timerSec,G.errors,G.hints,G.reveals,G.comboBonusPool,G.completionBonusPool);
+    document.getElementById('scoreDisplay').textContent=tempScore.toLocaleString();
+  }
   function inputNum(num){
     const sel=G.selected;
     if(sel<0||G.board[sel].clue||G.won||G_paused)return;
@@ -701,7 +709,7 @@
       }
       // Track if this is an error, register combo only on correct input
       if(num>0&&hasConflict(sel,num)){breakCombo();G.errors++;updateErrorDisplay();if(checkMistakeLimit())return;}
-      else if(num>0){registerCombo();checkCompletions(sel,num);}
+      else if(num>0){registerCombo();checkCompletions(sel,num);updateScoreDisplay();}
     }
     render(); updateNumpad();
     if(num>0){const el=document.querySelectorAll('.cell')[sel];if(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}}
