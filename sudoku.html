@@ -862,6 +862,7 @@
   /* NUMPAD */
   function buildNumpad(){
     const pad=document.getElementById('numpad');
+    pad.innerHTML='';
     for(let n=1;n<=9;n++){const btn=document.createElement('button');btn.className='num-btn';btn.dataset.n=n;btn.textContent=n;btn.addEventListener('click',()=>inputNum(n));pad.appendChild(btn);}
     const er=document.createElement('button');er.className='num-btn erase-btn';er.textContent='⌫';
     er.addEventListener('click',()=>{
