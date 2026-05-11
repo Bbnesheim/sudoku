@@ -30,10 +30,10 @@
     body {
       background: var(--bg); color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      height: 100vh; max-height: 100vh;
+      height: 100svh; max-height: 100svh;
       display: flex; flex-direction: column; align-items: center; overflow: hidden;
       transition: background 0.2s, color 0.2s;
-      /* Architecture: header (fixed) → ad space (flex) → board (fixed) → keyboard (fixed, pinned to bottom) */
+      /* 100svh = small viewport height, excludes address bar and other browser UI */
     }
     header {
       width: 100%; max-width: 480px;
