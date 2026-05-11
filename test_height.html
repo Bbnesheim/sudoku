@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      height: 100svh;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .section { padding: 4px; border: 1px solid red; }
+    #output { overflow-y: auto; flex: 1; }
+  </style>
+</head>
+<body>
+  <div class="section" id="header" style="background: #ccc;">HEADER</div>
+  <div class="section" id="adspace" style="background: #eee;">AD-SPACE</div>
+  <div class="section" id="board" style="background: #fff;">BOARD (6 rows × 40px + gaps)</div>
+  <div class="section" id="keyboard" style="background: #ddd;">KEYBOARD (3 rows × 36px + gaps)</div>
+  <div id="output" style="background: #f9f9f9; border: 1px solid blue;"></div>
+
+  <script>
+    const output = document.getElementById('output');
+    const body = document.body;
+    const header = document.getElementById('header');
+    const adspace = document.getElementById('adspace');
+    const board = document.getElementById('board');
+    const keyboard = document.getElementById('keyboard');
+    
+    setTimeout(() => {
+      const viewport = window.innerHeight;
+      const headerH = header.offsetHeight;
+      const adH = adspace.offsetHeight;
+      const boardH = board.offsetHeight;
+      const kbH = keyboard.offsetHeight;
+      const totalUsed = headerH + adH + boardH + kbH;
+      const overflow = totalUsed - viewport;
+      
+      output.innerHTML = `
+        <strong>Viewport height (100svh): ${viewport}px</strong><br>
+        Header: ${headerH}px<br>
+        Ad-space: ${adH}px<br>
+        Board: ${boardH}px<br>
+        Keyboard: ${kbH}px<br>
+        <strong>TOTAL: ${totalUsed}px</strong><br>
+        <strong style="color: ${overflow > 0 ? 'red' : 'green'};">
+          Overflow: ${overflow > 0 ? '+' + overflow : overflow}px
+        </strong>
+      `;
+    }, 100);
+  </script>
+</body>
+</html>
