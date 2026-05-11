@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Wordle">
@@ -30,10 +30,10 @@
     body {
       background: var(--bg); color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      height: 100dvh; max-height: 100dvh;
+      height: 100vh; max-height: 100vh;
       display: flex; flex-direction: column; align-items: center; overflow: hidden;
       transition: background 0.2s, color 0.2s;
-      /* Mobile-first: allocate fixed space to keyboard, board fills remaining */
+      /* Mobile-first: use 100vh which accounts for keyboard on PWA */
     }
     header {
       width: 100%; max-width: 480px;
@@ -109,6 +109,7 @@
       width: 100%; max-width: 480px; padding: 4px 6px 12px; flex-shrink: 0;
       display: flex; flex-direction: column; gap: 5px;
       /* Reserve ~146px: 3 rows × 46px + gaps + padding */
+      position: relative; z-index: 50;
     }
     .kb-row { display: flex; justify-content: center; gap: 4px; }
     .key {
