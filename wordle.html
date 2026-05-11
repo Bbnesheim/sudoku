@@ -33,7 +33,7 @@
       height: 100svh; max-height: 100svh;
       display: flex; flex-direction: column; align-items: center; overflow: hidden;
       transition: background 0.2s, color 0.2s;
-      /* 100svh = small viewport height, excludes address bar and other browser UI */
+      padding-bottom: 120px; /* Reserve space for fixed keyboard */
     }
     header {
       width: 100%; max-width: 480px;
@@ -110,11 +110,13 @@
     /* bounce animation for win */
     .tile.bounce { animation: bounce 0.6s ease forwards; }
     @keyframes bounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-18px)} 70%{transform:translateY(-8px)} }
-    /* Keyboard — pinned to bottom, compact */
+    /* Keyboard — fixed to bottom, always visible */
     .keyboard {
       width: 100%; max-width: 480px; padding: 2px 4px 4px; flex-shrink: 0;
       display: flex; flex-direction: column; gap: 3px;
-      position: relative; z-index: 100;
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      background: var(--bg); z-index: 100;
+      border-top: 1px solid var(--border);
     }
     .kb-row { display: flex; justify-content: center; gap: 3px; }
     .key {
