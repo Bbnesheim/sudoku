@@ -33,13 +33,14 @@
       height: 100vh; max-height: 100vh;
       display: flex; flex-direction: column; align-items: center; overflow: hidden;
       transition: background 0.2s, color 0.2s;
-      /* Mobile-first: use 100vh which accounts for keyboard on PWA */
+      /* Architecture: header (fixed) → ad space (flex) → board (fixed) → keyboard (fixed, pinned to bottom) */
     }
     header {
       width: 100%; max-width: 480px;
       display: flex; justify-content: space-between; align-items: center;
       padding: 10px 16px 4px; flex-shrink: 0;
       border-bottom: 1px solid var(--border);
+      z-index: 10;
     }
     header h1 { font-size: 1rem; font-weight: 900; letter-spacing: 4px; }
     .header-center { display: flex; flex-direction: column; align-items: center; line-height: 1; }
@@ -61,11 +62,15 @@
       transition: opacity 0.2s;
     }
     .toast.show { opacity: 1; }
-    /* Board */
+    /* Ad space — flexible middle */
+    .ad-space {
+      flex: 1; width: 100%; max-width: 480px;
+    }
+    /* Board — fixed size, centered, with breathing room above */
     .board-wrap {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      padding: 16px 4px 8px; width: 100%; max-width: 380px; min-height: 0;
-      overflow: hidden; /* Prevent board from escaping */
+      display: flex; align-items: center; justify-content: center;
+      padding: 12px 4px 8px; width: 100%; max-width: 380px; flex-shrink: 0;
+      overflow: visible;
     }
     .board { display: flex; flex-direction: column; gap: 4px; }
     .loading-wrap { display: none; }
@@ -104,12 +109,12 @@
     /* bounce animation for win */
     .tile.bounce { animation: bounce 0.6s ease forwards; }
     @keyframes bounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-18px)} 70%{transform:translateY(-8px)} }
-    /* Keyboard */
+    /* Keyboard — pinned to bottom, never escapes */
     .keyboard {
-      width: 100%; max-width: 480px; padding: 4px 6px 12px; flex-shrink: 0;
+      width: 100%; max-width: 480px; padding: 6px 6px 12px; flex-shrink: 0;
       display: flex; flex-direction: column; gap: 5px;
-      /* Reserve ~146px: 3 rows × 46px + gaps + padding */
-      position: relative; z-index: 50;
+      position: relative; z-index: 100;
+      /* ~160px total: 3 rows × 46px + gaps (15px) + padding (18px) */
     }
     .kb-row { display: flex; justify-content: center; gap: 4px; }
     .key {
@@ -166,9 +171,10 @@
     .no-data-msg { font-size: 0.82rem; color: var(--text-muted); margin: 16px 0; line-height: 1.5; }
     @media (max-height: 620px) {
       .key  { height: 38px; font-size: 0.72rem; }
-      .keyboard { padding: 2px 6px 8px; gap: 3px; }
+      .keyboard { padding: 4px 6px 10px; gap: 3px; }
       .kb-row { gap: 3px; }
-      .board-wrap { padding: 8px 4px 4px; } /* Reduce board padding on short screens */
+      .board-wrap { padding: 8px 4px 4px; }
+      .ad-space { flex: 0; /* Hide ad space on very short screens */ }
     }
   </style>
 </head>
