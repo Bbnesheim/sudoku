@@ -557,6 +557,74 @@
     return{arr:puzzle.split('').map(c=>c==='.'?0:+c),solution};
   }
 
+  /* SAVE & RESTORE GAME STATE */
+  function saveGame(){
+    if(!G.solution)return;
+    const state={
+      board:G.board.map(d=>({value:d.value,clue:d.clue,notes:Array.from(d.notes)})),
+      solution:G.solution,
+      diffIdx:G.diffIdx,
+      selected:G.selected,
+      pencil:G.pencil,
+      history:G.history.map(h=>({board:h.board.map(d=>({value:d.value,clue:d.clue,notes:Array.from(d.notes)})),sel:h.sel})),
+      timerSec:G.timerSec,
+      errors:G.errors,
+      hints:G.hints,
+      reveals:G.reveals,
+      combo:G.combo,
+      comboBonusPool:G.comboBonusPool,
+      completionBonusPool:G.completionBonusPool,
+      completedRows:Array.from(G.completedRows),
+      completedCols:Array.from(G.completedCols),
+      completedBoxes:Array.from(G.completedBoxes),
+      completedNumbers:Array.from(G.completedNumbers),
+      cfg:G.cfg,
+      hintCell:G.hintCell
+    };
+    localStorage.setItem('kg_sudoku_active',JSON.stringify(state));
+  }
+  function restoreGame(){
+    try{
+      const saved=JSON.parse(localStorage.getItem('kg_sudoku_active')||'null');
+      if(!saved)return false;
+      G.board=saved.board.map(d=>({value:d.value,clue:d.clue,notes:new Set(d.notes)}));
+      G.solution=saved.solution;
+      G.diffIdx=saved.diffIdx;
+      G.selected=saved.selected;
+      G.pencil=saved.pencil;
+      G.history=saved.history.map(h=>({board:h.board.map(d=>({value:d.value,clue:d.clue,notes:new Set(d.notes)})),sel:h.sel}));
+      G.timerSec=saved.timerSec;
+      G.errors=saved.errors;
+      G.hints=saved.hints;
+      G.reveals=saved.reveals;
+      G.combo=saved.combo;
+      G.comboBonusPool=saved.comboBonusPool;
+      G.completionBonusPool=saved.completionBonusPool;
+      G.completedRows=new Set(saved.completedRows||[]);
+      G.completedCols=new Set(saved.completedCols||[]);
+      G.completedBoxes=new Set(saved.completedBoxes||[]);
+      G.completedNumbers=new Set(saved.completedNumbers||[]);
+      G.cfg=saved.cfg||{conflicts:true,highlightSame:true,autoNotes:true};
+      G.hintCell=saved.hintCell||=-1;
+      G.won=false;
+      G_paused=false;
+      document.body.classList.remove('paused');
+      document.getElementById('pauseBtn').innerHTML='<svg width="20" height="20" viewBox="0 0 24 24"><use href="assets/icons/sprite.svg#icon-pause"/></svg>';
+      document.getElementById('diffLabel').textContent=DIFFS[G.diffIdx].name;
+      document.getElementById('timer').textContent=fmt(G.timerSec);
+      document.getElementById('scoreDisplay').textContent=calcScore(G.diffIdx,G.timerSec,G.errors,G.hints,G.reveals,G.comboBonusPool,G.completionBonusPool).toLocaleString();
+      document.getElementById('errorDisplay').textContent=G.errors>0?'⚠️ '+G.errors:'';
+      document.getElementById('cfgConflicts').checked=G.cfg.conflicts;
+      document.getElementById('cfgHighlightSame').checked=G.cfg.highlightSame;
+      document.getElementById('cfgAutoNotes').checked=G.cfg.autoNotes;
+      setPencil(G.pencil);
+      buildNumpad();render();startTimer();
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
   /* START GAME */
   function startGame(diffIdx){
     G_paused=false; document.body.classList.remove('paused');
@@ -690,7 +758,7 @@
   }
 
   /* INPUT */
-  function selectCell(i){if(G.won||G_paused)return;G.selected=i;render();}
+  function selectCell(i){if(G.won||G_paused)return;G.selected=i;render();saveGame();}
   function updateScoreDisplay(){
     const tempScore=calcScore(G.diffIdx,G.timerSec,G.errors,G.hints,G.reveals,G.comboBonusPool,G.completionBonusPool);
     document.getElementById('scoreDisplay').textContent=tempScore.toLocaleString();
@@ -711,7 +779,7 @@
       if(num>0&&hasConflict(sel,num)){breakCombo();G.errors++;updateErrorDisplay();if(checkMistakeLimit())return;}
       else if(num>0){registerCombo();checkCompletions(sel,num);updateScoreDisplay();}
     }
-    render(); updateNumpad();
+    render(); updateNumpad(); saveGame();
     if(num>0){const el=document.querySelectorAll('.cell')[sel];if(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}}
     if(num>0)checkWin();
   }
@@ -719,12 +787,12 @@
     const sel=G.selected;
     if(sel<0||G.board[sel].clue||G.won||G_paused)return;
     const d=G.board[sel];if(d.value===0&&d.notes.size===0)return;
-    snapshot(); d.value=0; d.notes.clear(); render(); updateNumpad();
+    snapshot(); d.value=0; d.notes.clear(); render(); updateNumpad(); saveGame();
   }
 
   /* UNDO */
   function snapshot(){G.history.push({board:G.board.map(d=>({value:d.value,clue:d.clue,notes:new Set(d.notes)})),sel:G.selected});if(G.history.length>200)G.history.shift();}
-  function undo(){if(!G.history.length)return;const p=G.history.pop();G.board=p.board;G.selected=p.sel;render();updateNumpad();}
+  function undo(){if(!G.history.length)return;const p=G.history.pop();G.board=p.board;G.selected=p.sel;render();updateNumpad();saveGame();}
 
   /* HINT MENU */
   function closeHintMenu(){document.getElementById('hintMenu').classList.add('hidden');}
@@ -755,6 +823,7 @@
     if(!G.board.every(d=>d.value>0))return;
     if(!G.board.every((d,i)=>!hasConflict(i,d.value)))return;
     G.won=true;stopTimer();launchConfetti();
+    localStorage.removeItem('kg_sudoku_active');
     const diffName=DIFFS[G.diffIdx].name;
     const score=calcScore(G.diffIdx,G.timerSec,G.errors,G.hints,G.reveals,G.comboBonusPool,G.completionBonusPool);
     const run=addRun(G.diffIdx,G.timerSec,score,G.errors,G.hints,G.reveals,G.comboBonusPool,G.completionBonusPool);
@@ -793,6 +862,7 @@
   /* NUMPAD */
   function buildNumpad(){
     const pad=document.getElementById('numpad');
+    pad.innerHTML='';
     for(let n=1;n<=9;n++){const btn=document.createElement('button');btn.className='num-btn';btn.dataset.n=n;btn.textContent=n;btn.addEventListener('click',()=>inputNum(n));pad.appendChild(btn);}
     const er=document.createElement('button');er.className='num-btn erase-btn';er.textContent='⌫';
     er.addEventListener('click',()=>{
@@ -987,6 +1057,7 @@
   /* NEW GAME FLOW */
   document.getElementById('newBtn').addEventListener('click',()=>{
     if(G_paused)togglePause();
+    localStorage.removeItem('kg_sudoku_active');
     pendingDiff=G.diffIdx;buildDiffGrid();
     document.getElementById('backHome').style.display='';
     document.getElementById('newModal').classList.remove('hidden');
@@ -1059,6 +1130,8 @@
   const user=initializeUser();
   if(!user){
     document.getElementById('welcomeModal').classList.remove('hidden');
+  }else if(restoreGame()){
+    // Game restored successfully, keep playing
   }else{
     document.getElementById('newModal').classList.remove('hidden');
   }

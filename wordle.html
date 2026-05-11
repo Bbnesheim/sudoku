@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Wordle">
@@ -30,25 +30,27 @@
     body {
       background: var(--bg); color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      height: 100dvh; max-height: 100dvh;
+      height: 100svh; max-height: 100svh;
       display: flex; flex-direction: column; align-items: center; overflow: hidden;
       transition: background 0.2s, color 0.2s;
+      padding-bottom: 120px; /* Reserve space for fixed keyboard */
     }
     header {
       width: 100%; max-width: 480px;
       display: flex; justify-content: space-between; align-items: center;
-      padding: 10px 16px 4px; flex-shrink: 0;
+      padding: 4px 12px 2px; flex-shrink: 0;
       border-bottom: 1px solid var(--border);
+      z-index: 10;
     }
-    header h1 { font-size: 1rem; font-weight: 900; letter-spacing: 4px; }
+    header h1 { font-size: 0.85rem; font-weight: 900; letter-spacing: 2px; }
     .header-center { display: flex; flex-direction: column; align-items: center; line-height: 1; }
-    .game-mode { font-size: 0.58rem; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+    .game-mode { font-size: 0.5rem; color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 1px; }
     .header-right { display: flex; gap: 6px; }
     .icon-btn {
       background: var(--btn-bg); border: none; color: var(--text);
-      width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+      width: 28px; height: 28px; border-radius: 4px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.95rem; transition: background 0.2s; text-decoration: none;
+      font-size: 0.85rem; transition: background 0.2s; text-decoration: none;
     }
     .icon-btn:hover { background: var(--btn-hover); }
     /* Toast */
@@ -60,10 +62,16 @@
       transition: opacity 0.2s;
     }
     .toast.show { opacity: 1; }
-    /* Board */
+    /* Ad space — minimal, only for actual ads */
+    .ad-space {
+      width: 100%; max-width: 480px; min-height: 0;
+      flex-shrink: 0;
+    }
+    /* Board — fixed size, centered, minimal padding */
     .board-wrap {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      padding: 4px; width: 100%; max-width: 380px; min-height: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 4px 2px 2px; width: 100%; max-width: 380px; flex-shrink: 0;
+      overflow: visible;
     }
     .board { display: flex; flex-direction: column; gap: 4px; }
     .loading-wrap { display: none; }
@@ -102,21 +110,23 @@
     /* bounce animation for win */
     .tile.bounce { animation: bounce 0.6s ease forwards; }
     @keyframes bounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-18px)} 70%{transform:translateY(-8px)} }
-    /* Keyboard */
+    /* Keyboard — fixed to bottom, always visible */
     .keyboard {
-      width: 100%; max-width: 480px; padding: 4px 6px 10px; flex-shrink: 0;
-      display: flex; flex-direction: column; gap: 5px;
+      width: 100%; max-width: 480px; padding: 2px 4px 4px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 3px;
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      background: var(--bg); z-index: 100;
+      border-top: 1px solid var(--border);
     }
-    .kb-row { display: flex; justify-content: center; gap: 4px; }
+    .kb-row { display: flex; justify-content: center; gap: 3px; }
     .key {
       background: var(--key-bg); color: var(--key-text);
-      border: none; border-radius: 6px; cursor: pointer;
-      height: 46px; padding: 0 2px;
-      font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
+      border: none; border-radius: 3px; cursor: pointer;
+      height: 36px; padding: 0 1px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
       display: flex; align-items: center; justify-content: center;
       transition: background 0.2s, color 0.2s;
-      flex: 1; max-width: 42px; user-select: none;
-      /* no min-width — flex:1 handles equal sizing without overflow */
+      flex: 1; max-width: 36px; user-select: none;
     }
     .key.wide { max-width: 62px; font-size: 0.65rem; }
     .key:active { opacity: 0.75; }
@@ -161,9 +171,11 @@
     /* No-data message */
     .no-data-msg { font-size: 0.82rem; color: var(--text-muted); margin: 16px 0; line-height: 1.5; }
     @media (max-height: 620px) {
-      .key  { height: 38px; font-size: 0.72rem; }
-      .keyboard { padding: 2px 6px 6px; gap: 3px; }
-      .kb-row { gap: 3px; }
+      .key  { height: 36px; font-size: 0.7rem; }
+      .keyboard { padding: 3px 6px 6px; gap: 3px; }
+      .kb-row { gap: 2px; }
+      .board-wrap { padding: 6px 4px 2px; }
+      .ad-space { flex: 0; /* Hide ad space on very short screens */ }
     }
   </style>
 </head>
@@ -182,6 +194,8 @@
   </header>
 
   <div class="toast" id="toast"></div>
+
+  <div class="ad-space"></div>
 
   <div class="board-wrap">
     <div class="board" id="board"></div>
