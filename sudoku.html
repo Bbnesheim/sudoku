@@ -434,18 +434,42 @@
       for(const n of nums){if(isValid(b,pos,n)){b[pos]=n;if(fill(b,pos+1,rand))return true;b[pos]=0;}}
       return false;
     }
+    function countSolutions(b,cap){
+      let count=0;
+      function solve(){
+        if(count>=cap)return;
+        let best=-1,bestCands=null,bestLen=10;
+        for(let i=0;i<81;i++){
+          if(b[i]!==0)continue;
+          const cands=[];
+          for(let n=1;n<=9;n++){if(isValid(b,i,n))cands.push(n);}
+          if(cands.length<bestLen){bestLen=cands.length;bestCands=cands;best=i;if(bestLen===0)return;}
+        }
+        if(best===-1){count++;return;}
+        for(const n of bestCands){
+          b[best]=n;
+          solve();
+          b[best]=0;
+          if(count>=cap)return;
+        }
+      }
+      solve();
+      return count;
+    }
     function generate(clueCount){
       const full=Array(81).fill(0);
       fill(full,0,true);
       const puzzle=[...full];
-      // Random removal without uniqueness check (instant, safe because win detection uses conflict checks)
+      // Dig holes one at a time, keeping a removal only if the puzzle still has a unique solution
       const indices=shuffle([...Array(81).keys()]);
       let removed=0;
       const target=81-clueCount;
       for(const idx of indices){
         if(removed>=target)break;
+        const backup=puzzle[idx];
         puzzle[idx]=0;
-        removed++;
+        if(countSolutions(puzzle,2)===1)removed++;
+        else puzzle[idx]=backup;
       }
       return{puzzle:puzzle.map(v=>v||'.').join(''),solution:full.join('')};
     }
